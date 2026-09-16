@@ -65,13 +65,30 @@ because they don't matter):
 
 ## Build order
 
-1. Next.js scaffold deployed to Vercel (placeholder page, live URL).
+1. ✅ Next.js scaffold deployed to Vercel (placeholder page, live URL).
+   Cloudflare R2 bucket + account API token created; R2 credentials added
+   as Vercel environment variables.
 2. DB schema + admin "create event" screen → generates token + QR.
 3. R2 bucket + presigned upload flow + public gallery page at `/e/<token>`.
 4. Thumbnail generation, image-first gallery grid.
 5. Original-file download via signed URLs.
 6. Disable/expire toggle in admin.
 7. Later: password protection, video thumbnails, per-photo delete.
+
+## Environment variables
+
+Set in Vercel (Settings → Environment Variables), for Production and
+Preview environments:
+
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME` — `paris-photo-club`
+- `R2_ENDPOINT` — the bucket's S3 API endpoint URL
+
+Database connection variables (`POSTGRES_URL` etc.) are injected
+automatically by Vercel once a Postgres database is attached to the
+project under the Storage tab — no manual copying needed.
 
 ## Data model (initial sketch)
 
