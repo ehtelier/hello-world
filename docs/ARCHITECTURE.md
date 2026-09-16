@@ -67,7 +67,9 @@ because they don't matter):
 
 1. ✅ Next.js scaffold deployed to Vercel (placeholder page, live URL).
    Cloudflare R2 bucket + account API token created; R2 credentials added
-   as Vercel environment variables.
+   as Vercel environment variables. Vercel project `paris-photo-club`
+   connected to this repo, with its Production environment's branch
+   tracking set to `claude/paris-photo-club-platform-q1vmxe`.
 2. DB schema + admin "create event" screen → generates token + QR.
 3. R2 bucket + presigned upload flow + public gallery page at `/e/<token>`.
 4. Thumbnail generation, image-first gallery grid.
