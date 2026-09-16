@@ -12,13 +12,17 @@ export default function Home() {
         gap: "16px",
       }}
     >
+      <p style={{ letterSpacing: "0.3em", fontSize: "0.7rem", opacity: 0.5 }}>
+        BY INVITATION ONLY
+      </p>
+      <h1 style={{ fontSize: "2rem", fontWeight: 600 }}>Paris Photo Club</h1>
       <p style={{ letterSpacing: "0.2em", fontSize: "0.75rem", opacity: 0.6 }}>
         SHOOT · DISCOVER · HANG
       </p>
-      <h1 style={{ fontSize: "2rem", fontWeight: 600 }}>Paris Photo Club</h1>
       <p style={{ maxWidth: "28rem", opacity: 0.75 }}>
-        Private event galleries are coming soon. Scan a QR code from your
-        outing to open its gallery — no account, no app.
+        Every gallery belongs to a single outing and a single circle of
+        members. No account to create, nothing to download. If you were
+        given the code, you already belong. Scan it, and step inside.
       </p>
     </main>
   );

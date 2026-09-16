@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Paris Photo Club",
-  description: "SHOOT. DISCOVER. HANG. Private galleries for Paris Photo Club outings.",
+  description: "An invitation only society. Scan the code from your outing to enter the gallery.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
