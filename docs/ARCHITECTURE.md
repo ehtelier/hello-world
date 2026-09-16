@@ -81,8 +81,16 @@ because they don't matter):
    tracking set to `claude/paris-photo-club-platform-q1vmxe`.
    ✅ Homepage code-entry form built (`src/app/page.tsx`) and placeholder
    gallery route (`src/app/e/[code]/page.tsx`), ahead of the database work.
-2. DB schema + admin "create event" screen → generates code + QR.
-3. R2 bucket + presigned upload flow + real gallery data at `/e/<code>`.
+2. ✅ Neon Postgres database created and connected to the Vercel project
+   (schema in `docs/schema.sql`, run once via the Neon SQL editor). Admin
+   login (`/admin/login`) and dashboard (`/admin`) built: password-gated via
+   `ADMIN_PASSWORD`, session is a signed cookie (HMAC keyed on the admin
+   password, no separate secret needed). Dashboard creates events (generates
+   an 8-character code, inserts into the database) and renders each event's
+   QR code and shareable link. `/e/<code>` now looks up the real database
+   row instead of showing a placeholder.
+3. R2 bucket + presigned upload flow + actual photo/video display at
+   `/e/<code>`.
 4. Thumbnail generation, image-first gallery grid.
 5. Original-file download via signed URLs.
 6. Disable/expire toggle in admin.
@@ -97,6 +105,9 @@ Preview environments:
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 - `R2_BUCKET_NAME` — `paris-photo-club`
+- `ADMIN_PASSWORD` — the password for `/admin`. Also doubles as the signing
+  key for the admin session cookie, so changing it instantly invalidates any
+  existing admin sessions.
 - `R2_ENDPOINT` — the bucket's S3 API endpoint URL
 
 Database connection variables (`POSTGRES_URL` etc.) are injected
