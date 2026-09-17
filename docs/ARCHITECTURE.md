@@ -143,6 +143,12 @@ Preview environments:
   existing admin sessions.
 - `R2_ENDPOINT` — the bucket's S3 API endpoint URL
 
+These were actually entered in Vercel as all-lowercase (`r2_account_id`,
+`r2_bucket_name`, etc.) rather than uppercase, from the very first setup
+screen. `src/lib/r2.ts` checks both cases for each one, so it works either
+way — no need to rename them, and no need to match case exactly if more are
+ever added by hand.
+
 Database connection variables are injected automatically by Vercel once
 Neon is connected under the Storage tab, no manual copying needed. Because
 the integration was connected with a custom prefix of `database`, the

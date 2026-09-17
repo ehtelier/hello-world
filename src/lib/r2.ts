@@ -3,12 +3,18 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 let client: S3Client | null = null;
 
+// The R2 variables were originally entered in lowercase in Vercel, so both
+// cases are checked here rather than requiring them to be renamed.
+function env(upper: string, lower: string): string | undefined {
+  return process.env[upper] ?? process.env[lower];
+}
+
 function getClient() {
   if (!client) {
-    const accountId = process.env.R2_ACCOUNT_ID;
-    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-    const endpoint = process.env.R2_ENDPOINT;
+    const accountId = env("R2_ACCOUNT_ID", "r2_account_id");
+    const accessKeyId = env("R2_ACCESS_KEY_ID", "r2_access_key_id");
+    const secretAccessKey = env("R2_SECRET_ACCESS_KEY", "r2_secret_access_key");
+    const endpoint = env("R2_ENDPOINT", "r2_endpoint");
     if (!accountId || !accessKeyId || !secretAccessKey || !endpoint) {
       throw new Error("R2 environment variables are not fully set");
     }
@@ -22,7 +28,7 @@ function getClient() {
 }
 
 function bucketName() {
-  const bucket = process.env.R2_BUCKET_NAME;
+  const bucket = env("R2_BUCKET_NAME", "r2_bucket_name");
   if (!bucket) {
     throw new Error("R2_BUCKET_NAME is not set");
   }
