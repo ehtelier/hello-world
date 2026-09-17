@@ -1,6 +1,7 @@
 import { sql, type EventRow } from "@/lib/db";
 import { createDownloadUrl, createViewUrl } from "@/lib/r2";
 import { UploadForm } from "./UploadForm";
+import { PhotoGrid } from "./PhotoGrid";
 
 type PhotoRow = {
   id: string;
@@ -84,48 +85,14 @@ export default async function EventGallery({
           No photos yet. Be the first to upload.
         </p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-            gap: "6px",
-            width: "100%",
-            maxWidth: "42rem",
-          }}
-        >
-          {photosWithUrls.map((photo) => (
-            <a
-              key={photo.id}
-              href={photo.downloadUrl}
-              style={{
-                display: "block",
-                position: "relative",
-                aspectRatio: "1",
-                overflow: "hidden",
-                borderRadius: "6px",
-                background: "rgba(128, 128, 128, 0.15)",
-              }}
-            >
-              {photo.mime_type.startsWith("video/") ? (
-                <video
-                  src={photo.viewUrl}
-                  muted
-                  playsInline
-                  preload="metadata"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={photo.viewUrl}
-                  alt=""
-                  loading="lazy"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              )}
-            </a>
-          ))}
-        </div>
+        <PhotoGrid
+          photos={photosWithUrls.map((photo) => ({
+            id: photo.id,
+            viewUrl: photo.viewUrl,
+            downloadUrl: photo.downloadUrl,
+            mimeType: photo.mime_type,
+          }))}
+        />
       )}
     </main>
   );
