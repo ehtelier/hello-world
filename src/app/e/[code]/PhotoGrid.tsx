@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Photo = {
   id: string;
@@ -9,7 +9,7 @@ type Photo = {
   mimeType: string;
 };
 
-export function PhotoGrid({ photos }: { photos: Photo[] }) {
+export function PhotoGrid({ code, photos }: { code: string; photos: Photo[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -63,6 +63,7 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
 
       {openIndex !== null && (
         <Lightbox
+          code={code}
           photo={photos[openIndex]}
           onClose={() => setOpenIndex(null)}
           onPrev={() => setOpenIndex((i) => (i === null ? null : (i - 1 + photos.length) % photos.length))}
@@ -74,17 +75,27 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
 }
 
 function Lightbox({
+  code,
   photo,
   onClose,
   onPrev,
   onNext,
 }: {
+  code: string;
   photo: Photo;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
 }) {
   const touchStartX = useRef<number | null>(null);
+
+  // Opening a photo full-screen is the point right before someone would
+  // press-and-hold to save it, an action no website can observe directly.
+  // Logging here (rather than only on an explicit "download" click) is a
+  // much more realistic proxy for that.
+  useEffect(() => {
+    fetch(`/api/view/${photo.id}?code=${encodeURIComponent(code)}`).catch(() => {});
+  }, [code, photo.id]);
 
   return (
     <div

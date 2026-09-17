@@ -121,11 +121,18 @@ because they don't matter):
    attendee (if any)." Both `/e/[code]`'s upload actions and a new download
    route (`src/app/api/download/[photoId]/route.ts`) use it, so uploads and
    downloads get attributed to whichever code someone actually used.
-   Honest limitation: a "download" is logged when someone taps the download
-   link, not when the save to their phone actually finishes, that last step
-   happens entirely on-device and isn't observable by the site. Still a
-   reasonable proxy for engagement, just not a hard guarantee. The admin
-   dashboard shows per-attendee upload/download counts alongside their QR.
+   Honest limitation: a "download" is logged the moment a photo opens
+   full-screen in the lightbox (`src/app/api/view/[photoId]/route.ts`), on
+   the theory that opening it is the necessary step right before someone
+   presses and holds to save it, since that save gesture itself is entirely
+   OS-level and invisible to any website. The explicit "download" link
+   (`src/app/api/download/[photoId]/route.ts`) logs the same way and is
+   deduplicated against it per photo+attendee (`photo_downloads_unique_idx`
+   in `docs/schema.sql`), so opening a photo and also clicking Download
+   only counts once. This is a reasonable proxy for engagement, not a hard
+   guarantee anyone actually finished saving it, that last step can never be
+   fully confirmed from the web. The admin dashboard shows per-attendee
+   upload/download counts alongside their QR.
 5. Thumbnail generation, image-first gallery grid polish (currently the grid
    just displays scaled-down originals, functional but not bandwidth-
    efficient for large photo counts).

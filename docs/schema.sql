@@ -59,3 +59,11 @@ CREATE TABLE IF NOT EXISTS photo_downloads (
 
 CREATE INDEX IF NOT EXISTS photo_downloads_photo_id_idx ON photo_downloads(photo_id);
 CREATE INDEX IF NOT EXISTS photo_downloads_attendee_id_idx ON photo_downloads(attendee_id);
+
+-- Backs the ON CONFLICT (photo_id, attendee_id) DO NOTHING used when
+-- logging a download/view, so the same person opening or downloading a
+-- photo more than once only counts once. NULL attendee_id (general/
+-- unattributed code) is exempt from this dedup, since Postgres treats
+-- separate NULLs as non-conflicting by default, which is what we want.
+CREATE UNIQUE INDEX IF NOT EXISTS photo_downloads_unique_idx
+  ON photo_downloads (photo_id, attendee_id);

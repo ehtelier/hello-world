@@ -90,6 +90,7 @@ export default async function EventGallery({
         </p>
       ) : (
         <PhotoGrid
+          code={normalizedCode}
           photos={photosWithUrls.map((photo) => ({
             id: photo.id,
             viewUrl: photo.viewUrl,
