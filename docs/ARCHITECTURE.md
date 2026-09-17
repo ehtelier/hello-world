@@ -89,12 +89,45 @@ because they don't matter):
    an 8-character code, inserts into the database) and renders each event's
    QR code and shareable link. `/e/<code>` now looks up the real database
    row instead of showing a placeholder.
-3. R2 bucket + presigned upload flow + actual photo/video display at
-   `/e/<code>`.
-4. Thumbnail generation, image-first gallery grid.
-5. Original-file download via signed URLs.
-6. Disable/expire toggle in admin.
-7. Later: password protection, video thumbnails, per-photo delete.
+   ✅ Added an event delete action/button (with confirmation) alongside
+   disable, for cleaning up test events.
+3. ✅ Real uploads: `/e/<code>` requests a presigned R2 PUT URL from a server
+   action (`src/app/e/[code]/actions.ts`), the browser uploads the original
+   file straight to R2 (server never touches the bytes), then a second
+   action inserts the `photos` row. The gallery grid renders real photos and
+   videos via signed view URLs; tapping one downloads the untouched original
+   via a signed URL with a forced `Content-Disposition: attachment`. This
+   required a CORS policy on the R2 bucket, see below.
+4. Thumbnail generation, image-first gallery grid polish (currently the grid
+   just displays scaled-down originals, functional but not bandwidth-
+   efficient for large photo counts).
+5. Later: password protection, expiration dates, video poster thumbnails,
+   per-photo delete, a proper full-size lightbox view (tapping a photo
+   currently downloads it directly rather than previewing it first).
+
+### R2 bucket CORS policy (required for uploads to work)
+
+Uploading goes straight from the attendee's browser to R2, which means the
+browser makes a cross-origin request to the R2 bucket. Without a CORS
+policy allowing that, the browser blocks the upload before it ever reaches
+R2. Set this once in the Cloudflare dashboard: R2 → the `paris-photo-club`
+bucket → Settings → CORS Policy → Add CORS Policy:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://paris-photo-club-eight.vercel.app"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Replace the origin with the site's actual live URL if it differs. Only
+`PUT` needs CORS here: viewing and downloading happen via plain `<img>`/
+`<a>` requests, which browsers don't subject to CORS the way they do
+JavaScript-initiated uploads.
 
 ## Environment variables
 

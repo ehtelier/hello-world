@@ -18,9 +18,14 @@ CREATE TABLE IF NOT EXISTS photos (
   event_id      uuid NOT NULL REFERENCES events(id) ON DELETE CASCADE,
   storage_key   text NOT NULL,
   thumb_key     text,
+  filename      text NOT NULL DEFAULT 'file',
   mime_type     text NOT NULL,
   byte_size     bigint NOT NULL,
   uploaded_at   timestamptz NOT NULL DEFAULT now()
 );
+
+-- Added after the initial table creation, for anyone re-running this file
+-- against a database that already has the old photos table shape.
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS filename text NOT NULL DEFAULT 'file';
 
 CREATE INDEX IF NOT EXISTS photos_event_id_idx ON photos(event_id);
