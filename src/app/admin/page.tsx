@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { sql, type EventRow } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { createEvent, logout, toggleDisabled } from "./actions";
+import { DeleteEventButton } from "./DeleteEventButton";
 
 async function baseUrl() {
   const headerList = await headers();
@@ -135,28 +136,32 @@ export default async function AdminDashboard() {
                 <p style={{ fontSize: "0.75rem", color: "#e5484d" }}>Disabled</p>
               )}
             </div>
-            <form
-              action={async () => {
-                "use server";
-                await toggleDisabled(event.id, !event.disabled);
-              }}
-            >
-              <button
-                type="submit"
-                style={{
-                  background: "none",
-                  border: "1px solid rgba(128, 128, 128, 0.4)",
-                  borderRadius: "6px",
-                  padding: "6px 12px",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: "0.8rem",
-                  whiteSpace: "nowrap",
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <form
+                action={async () => {
+                  "use server";
+                  await toggleDisabled(event.id, !event.disabled);
                 }}
               >
-                {event.disabled ? "Enable" : "Disable"}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  style={{
+                    width: "100%",
+                    background: "none",
+                    border: "1px solid rgba(128, 128, 128, 0.4)",
+                    borderRadius: "6px",
+                    padding: "6px 12px",
+                    color: "inherit",
+                    cursor: "pointer",
+                    fontSize: "0.8rem",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {event.disabled ? "Enable" : "Disable"}
+                </button>
+              </form>
+              <DeleteEventButton eventId={event.id} eventName={event.name} />
+            </div>
           </div>
         ))}
       </div>

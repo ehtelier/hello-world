@@ -62,3 +62,9 @@ export async function toggleDisabled(eventId: string, nextDisabled: boolean) {
   await sql`UPDATE events SET disabled = ${nextDisabled} WHERE id = ${eventId}`;
   revalidatePath("/admin");
 }
+
+export async function deleteEvent(eventId: string) {
+  await requireAdmin();
+  await sql`DELETE FROM events WHERE id = ${eventId}`;
+  revalidatePath("/admin");
+}
