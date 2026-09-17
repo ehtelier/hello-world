@@ -4,9 +4,13 @@ let client: NeonQueryFunction<false, false> | null = null;
 
 function getClient() {
   if (!client) {
-    const url = process.env.DATABASE_URL;
+    // The Neon integration was connected with a custom "database" prefix,
+    // so Vercel named the injected variable database_DATABASE_URL rather
+    // than plain DATABASE_URL. DATABASE_URL is kept as a fallback in case
+    // the integration is ever reconnected without a prefix.
+    const url = process.env.database_DATABASE_URL ?? process.env.DATABASE_URL;
     if (!url) {
-      throw new Error("DATABASE_URL is not set");
+      throw new Error("database_DATABASE_URL is not set");
     }
     client = neon(url);
   }

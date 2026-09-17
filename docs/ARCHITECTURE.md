@@ -110,9 +110,13 @@ Preview environments:
   existing admin sessions.
 - `R2_ENDPOINT` — the bucket's S3 API endpoint URL
 
-Database connection variables (`POSTGRES_URL` etc.) are injected
-automatically by Vercel once a Postgres database is attached to the
-project under the Storage tab — no manual copying needed.
+Database connection variables are injected automatically by Vercel once
+Neon is connected under the Storage tab, no manual copying needed. Because
+the integration was connected with a custom prefix of `database`, the
+actual variable name is **`database_DATABASE_URL`** (not plain
+`DATABASE_URL`) — `src/lib/db.ts` checks that name first, with plain
+`DATABASE_URL` as a fallback in case the integration is ever reconnected
+without a prefix.
 
 ## Data model (initial sketch)
 
