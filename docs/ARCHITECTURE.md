@@ -112,12 +112,25 @@ because they don't matter):
    capture date, not by when it was downloaded. This was a deliberate
    tradeoff: fixing that sort-order would require stripping/rewriting EXIF
    data, which was ruled out to keep originals byte-for-byte untouched.
-4. Thumbnail generation, image-first gallery grid polish (currently the grid
+4. ✅ Per-attendee access codes for contribution/download tracking. Each
+   event keeps its original shared `code` (general/unattributed fallback
+   access), and admins can now add named attendees to an event
+   (`src/app/admin/actions.ts` → `addAttendee`), each getting their own
+   unique code and QR. `src/lib/access.ts` (`resolveAccess`) is the single
+   place that turns any code, attendee or general, into "which event, which
+   attendee (if any)." Both `/e/[code]`'s upload actions and a new download
+   route (`src/app/api/download/[photoId]/route.ts`) use it, so uploads and
+   downloads get attributed to whichever code someone actually used.
+   Honest limitation: a "download" is logged when someone taps the download
+   link, not when the save to their phone actually finishes, that last step
+   happens entirely on-device and isn't observable by the site. Still a
+   reasonable proxy for engagement, just not a hard guarantee. The admin
+   dashboard shows per-attendee upload/download counts alongside their QR.
+5. Thumbnail generation, image-first gallery grid polish (currently the grid
    just displays scaled-down originals, functional but not bandwidth-
    efficient for large photo counts).
-5. Later: password protection, expiration dates, video poster thumbnails,
-   per-photo delete, a proper full-size lightbox view (tapping a photo
-   currently downloads it directly rather than previewing it first).
+6. Later: password protection, expiration dates, video poster thumbnails,
+   per-photo delete.
 
 ### R2 bucket CORS policy (required for uploads to work)
 
@@ -186,11 +199,27 @@ events
 photos
   id            uuid pk
   event_id      uuid fk -> events.id
+  attendee_id   uuid nullable fk -> attendees.id  -- null = uploaded via the
+                                                   -- event's general code
   storage_key   text                   -- R2 key of the original file
   thumb_key     text nullable          -- R2 key of the generated thumbnail
+  filename      text                   -- original filename, for download naming
   mime_type     text
   byte_size     bigint
   uploaded_at   timestamptz
+
+attendees
+  id            uuid pk
+  event_id      uuid fk -> events.id
+  code          text unique, indexed   -- this attendee's personal code
+  name          text
+  created_at    timestamptz
+
+photo_downloads
+  id            uuid pk
+  photo_id      uuid fk -> photos.id
+  attendee_id   uuid nullable fk -> attendees.id  -- null = general code
+  downloaded_at timestamptz
 ```
 
 ## Open items / needs owner input before next stage

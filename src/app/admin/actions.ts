@@ -31,19 +31,14 @@ async function requireAdmin() {
   }
 }
 
-export async function createEvent(formData: FormData) {
-  await requireAdmin();
-
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) return;
-
-  // Collisions are astronomically unlikely (31^8 possibilities) but a
-  // unique index backs this up regardless; retry a few times just in case.
+// Collisions are astronomically unlikely (31^8 possibilities) but a unique
+// index backs this up regardless; retry a few times just in case.
+async function withUniqueCode(insert: (code: string) => Promise<unknown>) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateEventCode();
     try {
-      await sql`INSERT INTO events (code, name) VALUES (${code}, ${name})`;
-      break;
+      await insert(code);
+      return code;
     } catch (error) {
       const isUniqueViolation =
         typeof error === "object" &&
@@ -53,6 +48,16 @@ export async function createEvent(formData: FormData) {
       if (!isUniqueViolation || attempt === 4) throw error;
     }
   }
+  throw new Error("Failed to generate a unique code");
+}
+
+export async function createEvent(formData: FormData) {
+  await requireAdmin();
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return;
+
+  await withUniqueCode((code) => sql`INSERT INTO events (code, name) VALUES (${code}, ${name})`);
 
   revalidatePath("/admin");
 }
@@ -66,5 +71,24 @@ export async function toggleDisabled(eventId: string, nextDisabled: boolean) {
 export async function deleteEvent(eventId: string) {
   await requireAdmin();
   await sql`DELETE FROM events WHERE id = ${eventId}`;
+  revalidatePath("/admin");
+}
+
+export async function addAttendee(eventId: string, formData: FormData) {
+  await requireAdmin();
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return;
+
+  await withUniqueCode(
+    (code) => sql`INSERT INTO attendees (event_id, code, name) VALUES (${eventId}, ${code}, ${name})`
+  );
+
+  revalidatePath("/admin");
+}
+
+export async function deleteAttendee(attendeeId: string) {
+  await requireAdmin();
+  await sql`DELETE FROM attendees WHERE id = ${attendeeId}`;
   revalidatePath("/admin");
 }

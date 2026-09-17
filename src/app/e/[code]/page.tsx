@@ -1,6 +1,6 @@
-import { sql, type EventRow } from "@/lib/db";
-import { createDownloadUrl, createViewUrl } from "@/lib/r2";
-import { buildDownloadFilename } from "@/lib/downloadName";
+import { sql } from "@/lib/db";
+import { createViewUrl } from "@/lib/r2";
+import { resolveAccess } from "@/lib/access";
 import { UploadForm } from "./UploadForm";
 import { PhotoGrid } from "./PhotoGrid";
 
@@ -21,11 +21,9 @@ export default async function EventGallery({
   const { code } = await params;
   const normalizedCode = code.trim().toUpperCase();
 
-  const [event] = (await sql`
-    SELECT * FROM events WHERE code = ${normalizedCode} LIMIT 1
-  `) as EventRow[];
+  const access = await resolveAccess(normalizedCode);
 
-  if (!event || event.disabled) {
+  if (!access || access.event.disabled) {
     return (
       <main
         style={{
@@ -49,23 +47,21 @@ export default async function EventGallery({
     );
   }
 
-  // Fetched oldest-first so the sequence number in each download's filename
-  // reflects upload order and stays stable as new photos are added later.
+  const { event, attendee } = access;
+
   const photosAsc = (await sql`
     SELECT * FROM photos WHERE event_id = ${event.id} ORDER BY uploaded_at ASC
   `) as PhotoRow[];
 
   const photosWithUrls = await Promise.all(
-    photosAsc.map(async (photo, index) => {
-      const downloadName = buildDownloadFilename(event.name, index + 1, photo.filename);
-      return {
-        ...photo,
-        viewUrl: await createViewUrl(photo.storage_key),
-        downloadUrl: await createDownloadUrl(photo.storage_key, downloadName, photo.mime_type),
-      };
-    })
+    photosAsc.map(async (photo) => ({
+      ...photo,
+      viewUrl: await createViewUrl(photo.storage_key),
+      downloadUrl: `/api/download/${photo.id}?code=${encodeURIComponent(normalizedCode)}`,
+    }))
   );
-  // Newest first for display, independent of the ascending numbering above.
+  // Newest first for display; upload-order numbering happens at download
+  // time in the tracking route, independent of this display order.
   photosWithUrls.reverse();
 
   return (
@@ -81,12 +77,12 @@ export default async function EventGallery({
     >
       <div style={{ textAlign: "center" }}>
         <p style={{ letterSpacing: "0.3em", fontSize: "0.7rem", opacity: 0.5 }}>
-          YOU ARE IN
+          {attendee ? `YOU ARE IN, ${attendee.name.toUpperCase()}` : "YOU ARE IN"}
         </p>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 600 }}>{event.name}</h1>
       </div>
 
-      <UploadForm code={event.code} />
+      <UploadForm code={normalizedCode} />
 
       {photosWithUrls.length === 0 ? (
         <p style={{ opacity: 0.6, textAlign: "center" }}>
