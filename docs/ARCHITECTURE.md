@@ -98,6 +98,20 @@ because they don't matter):
    videos via signed view URLs; tapping one downloads the untouched original
    via a signed URL with a forced `Content-Disposition: attachment`. This
    required a CORS policy on the R2 bucket, see below.
+   ✅ Added a full-screen swipeable lightbox (`PhotoGrid.tsx`) so tapping a
+   photo previews it (with prev/next) instead of immediately downloading;
+   this also fixes phones saving downloads to Files/Downloads instead of
+   Photos, since press-and-hold on a shown image triggers the OS's native
+   "Save to Photos" instead.
+   ✅ Downloaded files are renamed to `<Event Name> <sequence>.<ext>` (e.g.
+   `PPC 001 Marais 003.jpg`), numbered by upload order
+   (`src/lib/downloadName.ts`). This only changes the filename in the
+   download's `Content-Disposition` header — the original bytes and all
+   embedded metadata (EXIF date, GPS, etc.) are never touched, which means
+   phones still sort a saved photo into their camera roll by its original
+   capture date, not by when it was downloaded. This was a deliberate
+   tradeoff: fixing that sort-order would require stripping/rewriting EXIF
+   data, which was ruled out to keep originals byte-for-byte untouched.
 4. Thumbnail generation, image-first gallery grid polish (currently the grid
    just displays scaled-down originals, functional but not bandwidth-
    efficient for large photo counts).
