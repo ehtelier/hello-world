@@ -49,18 +49,21 @@ export default async function EventGallery({
 
   const { event, attendee } = access;
 
-  const photosAsc = (await sql`
-    SELECT * FROM photos WHERE event_id = ${event.id} ORDER BY uploaded_at ASC
+  // Ordered by when each photo/video was actually taken (falling back to
+  // upload time if that's unknown), not by upload order, so the gallery
+  // reads as the day actually unfolded no matter who uploaded what when.
+  const photosByCaptureTime = (await sql`
+    SELECT * FROM photos
+    WHERE event_id = ${event.id}
+    ORDER BY COALESCE(taken_at, uploaded_at) ASC
   `) as PhotoRow[];
 
   const photosWithUrls = await Promise.all(
-    photosAsc.map(async (photo) => ({
+    photosByCaptureTime.map(async (photo) => ({
       ...photo,
       viewUrl: await createViewUrl(photo.storage_key),
     }))
   );
-  // Newest first for display.
-  photosWithUrls.reverse();
 
   return (
     <main

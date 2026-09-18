@@ -114,7 +114,19 @@ because they don't matter):
    more editorial, magazine-like feel. The lightbox responds to a vertical
    swipe (up = next, down = previous), matching TikTok/Instagram-style feed
    navigation, instead of the original left/right swipe, and shows a
-   `3 / 12` position counter instead of instructional text.
+   `3 / 12` position counter instead of instructional text. The full-screen
+   viewer also locks background scrolling (`document.body.style.overflow`
+   plus `touch-action: none` on the viewer) so swiping through photos
+   doesn't also scroll the grid underneath.
+   ✅ Gallery order is by when each photo/video was actually taken, not
+   upload order, so the gallery reads as the day unfolded regardless of who
+   uploaded what when. The capture time is read client-side before upload
+   (`src/lib/capturedAt.ts`, using the `exifr` package): EXIF
+   `DateTimeOriginal`/`CreateDate` for photos when present, falling back to
+   the file's own "last modified" date otherwise (used outright for videos,
+   since video container metadata isn't parsed). Stored as `photos.taken_at`
+   (nullable); sorting uses `COALESCE(taken_at, uploaded_at)` so older rows
+   and anything without a readable date still sort sensibly.
 4. ✅ Per-attendee access codes for contribution tracking. Each event keeps
    its original shared `code` (general/unattributed fallback access), and
    admins can now add named attendees to an event
@@ -215,6 +227,8 @@ photos
   mime_type     text
   byte_size     bigint
   uploaded_at   timestamptz
+  taken_at      timestamptz nullable  -- when actually captured; gallery
+                                       -- sorts by COALESCE(taken_at, uploaded_at)
 
 attendees
   id            uuid pk

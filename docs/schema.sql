@@ -58,3 +58,12 @@ CREATE INDEX IF NOT EXISTS photos_attendee_id_idx ON photos(attendee_id);
 -- table and its indexes may still exist in the database. Harmless to leave
 -- in place; drop it if you'd like to clean up:
 --   DROP TABLE IF EXISTS photo_downloads;
+
+-- When the photo/video was actually taken (read from EXIF metadata in the
+-- browser before upload, or the file's own "last modified" date as a
+-- fallback), rather than when it happened to be uploaded, so the gallery
+-- can be ordered as the day actually unfolded regardless of upload order.
+-- Nullable: older rows and any upload where this couldn't be determined
+-- fall back to uploaded_at (handled with COALESCE wherever this is sorted).
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS taken_at timestamptz;
+CREATE INDEX IF NOT EXISTS photos_taken_at_idx ON photos(event_id, taken_at);

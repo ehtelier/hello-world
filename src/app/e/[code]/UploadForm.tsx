@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { confirmUpload, requestUpload } from "./actions";
+import { getCapturedAt } from "@/lib/capturedAt";
 
 export function UploadForm({ code }: { code: string }) {
   const router = useRouter();
@@ -18,6 +19,7 @@ export function UploadForm({ code }: { code: string }) {
       await Promise.all(
         files.map(async (file) => {
           const contentType = file.type || "application/octet-stream";
+          const capturedAt = await getCapturedAt(file);
           const { uploadUrl, storageKey } = await requestUpload(code, file.name, contentType);
 
           const response = await fetch(uploadUrl, {
@@ -29,7 +31,7 @@ export function UploadForm({ code }: { code: string }) {
             throw new Error(`Upload failed for ${file.name}`);
           }
 
-          await confirmUpload(code, storageKey, file.name, contentType, file.size);
+          await confirmUpload(code, storageKey, file.name, contentType, file.size, capturedAt);
           done += 1;
           setStatus(`Uploading ${done} of ${files.length}...`);
         })

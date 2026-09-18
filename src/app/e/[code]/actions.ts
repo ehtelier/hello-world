@@ -31,18 +31,24 @@ export async function confirmUpload(
   storageKey: string,
   filename: string,
   contentType: string,
-  byteSize: number
+  byteSize: number,
+  capturedAt: string | null
 ) {
   const { event, attendee } = await requireActiveAccess(code);
+
+  const takenAt = capturedAt ? new Date(capturedAt) : null;
+  const validTakenAt = takenAt && !Number.isNaN(takenAt.getTime()) ? takenAt : null;
+
   await sql`
-    INSERT INTO photos (event_id, attendee_id, storage_key, filename, mime_type, byte_size)
+    INSERT INTO photos (event_id, attendee_id, storage_key, filename, mime_type, byte_size, taken_at)
     VALUES (
       ${event.id},
       ${attendee?.id ?? null},
       ${storageKey},
       ${filename || "file"},
       ${contentType || "application/octet-stream"},
-      ${byteSize}
+      ${byteSize},
+      ${validTakenAt}
     )
   `;
   revalidatePath(`/e/${code}`);
