@@ -44,16 +44,7 @@ export default async function AdminDashboard() {
         GROUP BY attendee_id
       `) as CountRow[];
 
-      const downloadCounts = (await sql`
-        SELECT pd.attendee_id, COUNT(*)::int AS count
-        FROM photo_downloads pd
-        JOIN photos p ON p.id = pd.photo_id
-        WHERE p.event_id = ${event.id}
-        GROUP BY pd.attendee_id
-      `) as CountRow[];
-
       const uploadMap = new Map(uploadCounts.map((row) => [row.attendee_id, row.count]));
-      const downloadMap = new Map(downloadCounts.map((row) => [row.attendee_id, row.count]));
 
       const attendeesWithStats = await Promise.all(
         attendees.map(async (attendee) => ({
@@ -61,7 +52,6 @@ export default async function AdminDashboard() {
           url: `${origin}/e/${attendee.code}`,
           qr: await QRCode.toDataURL(`${origin}/e/${attendee.code}`, { margin: 1, width: 160 }),
           uploads: uploadMap.get(attendee.id) ?? 0,
-          downloads: downloadMap.get(attendee.id) ?? 0,
         }))
       );
 
@@ -71,7 +61,6 @@ export default async function AdminDashboard() {
         qr: await QRCode.toDataURL(`${origin}/e/${event.code}`, { margin: 1, width: 240 }),
         attendees: attendeesWithStats,
         unattributedUploads: uploadMap.get(null) ?? 0,
-        unattributedDownloads: downloadMap.get(null) ?? 0,
       };
     })
   );
@@ -213,14 +202,11 @@ export default async function AdminDashboard() {
               <p style={{ fontSize: "0.75rem", letterSpacing: "0.1em", opacity: 0.5, marginBottom: "8px" }}>
                 ATTENDEES — {event.attendees.length} · uploaded {event.unattributedUploads +
                   event.attendees.reduce((sum, a) => sum + a.uploads, 0)}
-                , downloaded {event.unattributedDownloads +
-                  event.attendees.reduce((sum, a) => sum + a.downloads, 0)}
               </p>
 
-              {(event.unattributedUploads > 0 || event.unattributedDownloads > 0) && (
+              {event.unattributedUploads > 0 && (
                 <p style={{ fontSize: "0.8rem", opacity: 0.5, marginBottom: "8px" }}>
-                  Unattributed (via general code): {event.unattributedUploads} uploaded,{" "}
-                  {event.unattributedDownloads} downloaded
+                  Unattributed (via general code): {event.unattributedUploads} uploaded
                 </p>
               )}
 
@@ -248,7 +234,7 @@ export default async function AdminDashboard() {
                         {attendee.code}
                       </p>
                       <p style={{ fontSize: "0.75rem", opacity: 0.6 }}>
-                        {attendee.uploads} uploaded · {attendee.downloads} downloaded
+                        {attendee.uploads} uploaded
                       </p>
                     </div>
                     <form

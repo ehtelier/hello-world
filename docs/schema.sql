@@ -47,23 +47,14 @@ CREATE INDEX IF NOT EXISTS attendees_event_id_idx ON attendees(event_id);
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS attendee_id uuid REFERENCES attendees(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS photos_attendee_id_idx ON photos(attendee_id);
 
--- Logged whenever someone actually taps "download" on a photo (not just
--- browses/previews it), so contribution vs. download activity can be
--- compared per attendee.
-CREATE TABLE IF NOT EXISTS photo_downloads (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  photo_id      uuid NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
-  attendee_id   uuid REFERENCES attendees(id) ON DELETE SET NULL,
-  downloaded_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS photo_downloads_photo_id_idx ON photo_downloads(photo_id);
-CREATE INDEX IF NOT EXISTS photo_downloads_attendee_id_idx ON photo_downloads(attendee_id);
-
--- Backs the ON CONFLICT (photo_id, attendee_id) DO NOTHING used when
--- logging a download/view, so the same person opening or downloading a
--- photo more than once only counts once. NULL attendee_id (general/
--- unattributed code) is exempt from this dedup, since Postgres treats
--- separate NULLs as non-conflicting by default, which is what we want.
-CREATE UNIQUE INDEX IF NOT EXISTS photo_downloads_unique_idx
-  ON photo_downloads (photo_id, attendee_id);
+-- Download tracking (a photo_downloads table + view/download tracking
+-- routes) was tried and then removed: it either undercounted (missing the
+-- press-and-hold "Save to Photos" gesture entirely) or, once tracking was
+-- moved to "photo opened full-screen," added a network round-trip to every
+-- photo view for a metric that turned out not to be worth the UX cost.
+-- Contribution tracking (uploads, via photos.attendee_id above) stayed.
+--
+-- If you ran an earlier version of this file, a now-unused photo_downloads
+-- table and its indexes may still exist in the database. Harmless to leave
+-- in place; drop it if you'd like to clean up:
+--   DROP TABLE IF EXISTS photo_downloads;

@@ -112,31 +112,25 @@ because they don't matter):
    capture date, not by when it was downloaded. This was a deliberate
    tradeoff: fixing that sort-order would require stripping/rewriting EXIF
    data, which was ruled out to keep originals byte-for-byte untouched.
-4. ✅ Per-attendee access codes for contribution/download tracking. Each
-   event keeps its original shared `code` (general/unattributed fallback
-   access), and admins can now add named attendees to an event
+4. ✅ Per-attendee access codes for contribution tracking. Each event keeps
+   its original shared `code` (general/unattributed fallback access), and
+   admins can now add named attendees to an event
    (`src/app/admin/actions.ts` → `addAttendee`), each getting their own
    unique code and QR. `src/lib/access.ts` (`resolveAccess`) is the single
    place that turns any code, attendee or general, into "which event, which
-   attendee (if any)." Both `/e/[code]`'s upload actions and a new download
-   route (`src/app/api/download/[photoId]/route.ts`) use it, so uploads and
-   downloads get attributed to whichever code someone actually used.
-   Honest limitation: a "download" is logged once a photo has been open
-   full-screen in the lightbox for 1.5 seconds (`src/app/api/view/[photoId]/route.ts`),
-   on the theory that pausing on it is the necessary step right before
-   someone presses and holds to save it, since that save gesture itself is
-   entirely OS-level and invisible to any website. The delay (canceled if
-   they swipe to the next photo before it elapses) matters: logging the
-   instant a photo opens counted every photo someone swiped past while
-   browsing, not just ones they stopped to actually look at. The explicit
-   "download" link
-   (`src/app/api/download/[photoId]/route.ts`) logs the same way and is
-   deduplicated against it per photo+attendee (`photo_downloads_unique_idx`
-   in `docs/schema.sql`), so opening a photo and also clicking Download
-   only counts once. This is a reasonable proxy for engagement, not a hard
-   guarantee anyone actually finished saving it, that last step can never be
-   fully confirmed from the web. The admin dashboard shows per-attendee
-   upload/download counts alongside their QR.
+   attendee (if any)." `/e/[code]`'s upload actions use it, so uploads get
+   attributed to whichever code someone actually used, and the admin
+   dashboard shows a per-attendee upload count alongside their QR.
+
+   Download tracking was also built (a `photo_downloads` table, a route
+   fired when a photo opened full-screen, a dedup index) and then removed
+   by request: press-and-hold "Save to Photos" is invisible to any website,
+   so the only way to approximate it was logging on "photo opened
+   full-screen," which meant every photo swiped past while browsing added a
+   network round-trip. That cost to the browsing experience wasn't worth
+   what was, at best, an approximation of a real download anyway.
+   Contribution tracking (uploads) doesn't have this problem: an upload is
+   a real, unambiguous action the server directly participates in.
 5. Thumbnail generation, image-first gallery grid polish (currently the grid
    just displays scaled-down originals, functional but not bandwidth-
    efficient for large photo counts).
@@ -225,12 +219,6 @@ attendees
   code          text unique, indexed   -- this attendee's personal code
   name          text
   created_at    timestamptz
-
-photo_downloads
-  id            uuid pk
-  photo_id      uuid fk -> photos.id
-  attendee_id   uuid nullable fk -> attendees.id  -- null = general code
-  downloaded_at timestamptz
 ```
 
 ## Open items / needs owner input before next stage

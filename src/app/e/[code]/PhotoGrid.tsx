@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 type Photo = {
   id: string;
@@ -9,7 +9,7 @@ type Photo = {
   mimeType: string;
 };
 
-export function PhotoGrid({ code, photos }: { code: string; photos: Photo[] }) {
+export function PhotoGrid({ photos }: { photos: Photo[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -63,7 +63,6 @@ export function PhotoGrid({ code, photos }: { code: string; photos: Photo[] }) {
 
       {openIndex !== null && (
         <Lightbox
-          code={code}
           photo={photos[openIndex]}
           onClose={() => setOpenIndex(null)}
           onPrev={() => setOpenIndex((i) => (i === null ? null : (i - 1 + photos.length) % photos.length))}
@@ -75,31 +74,17 @@ export function PhotoGrid({ code, photos }: { code: string; photos: Photo[] }) {
 }
 
 function Lightbox({
-  code,
   photo,
   onClose,
   onPrev,
   onNext,
 }: {
-  code: string;
   photo: Photo;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
 }) {
   const touchStartX = useRef<number | null>(null);
-
-  // Logging the instant a photo opens counts every photo someone swipes
-  // past while browsing, not just ones they actually stop to look at (and
-  // likely press-and-hold to save). Waiting for a short pause before
-  // logging filters out quick flicks through the gallery; moving to the
-  // next/previous photo before the delay elapses cancels it.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetch(`/api/view/${photo.id}?code=${encodeURIComponent(code)}`).catch(() => {});
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [code, photo.id]);
 
   return (
     <div
