@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Photo = {
   id: string;
@@ -91,6 +91,17 @@ function Lightbox({
 }) {
   const touchStartY = useRef<number | null>(null);
 
+  // Without this, the grid underneath keeps scrolling behind the
+  // full-screen viewer while swiping, since a fixed overlay alone doesn't
+  // stop the page behind it from scrolling on mobile.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   return (
     <div
       style={{
@@ -103,6 +114,7 @@ function Lightbox({
         alignItems: "center",
         justifyContent: "center",
         padding: "16px",
+        touchAction: "none",
       }}
       onTouchStart={(event) => {
         touchStartY.current = event.touches[0].clientY;
