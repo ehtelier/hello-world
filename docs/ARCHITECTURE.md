@@ -121,11 +121,15 @@ because they don't matter):
    attendee (if any)." Both `/e/[code]`'s upload actions and a new download
    route (`src/app/api/download/[photoId]/route.ts`) use it, so uploads and
    downloads get attributed to whichever code someone actually used.
-   Honest limitation: a "download" is logged the moment a photo opens
-   full-screen in the lightbox (`src/app/api/view/[photoId]/route.ts`), on
-   the theory that opening it is the necessary step right before someone
-   presses and holds to save it, since that save gesture itself is entirely
-   OS-level and invisible to any website. The explicit "download" link
+   Honest limitation: a "download" is logged once a photo has been open
+   full-screen in the lightbox for 1.5 seconds (`src/app/api/view/[photoId]/route.ts`),
+   on the theory that pausing on it is the necessary step right before
+   someone presses and holds to save it, since that save gesture itself is
+   entirely OS-level and invisible to any website. The delay (canceled if
+   they swipe to the next photo before it elapses) matters: logging the
+   instant a photo opens counted every photo someone swiped past while
+   browsing, not just ones they stopped to actually look at. The explicit
+   "download" link
    (`src/app/api/download/[photoId]/route.ts`) logs the same way and is
    deduplicated against it per photo+attendee (`photo_downloads_unique_idx`
    in `docs/schema.sql`), so opening a photo and also clicking Download

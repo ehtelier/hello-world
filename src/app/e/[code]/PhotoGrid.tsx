@@ -89,12 +89,16 @@ function Lightbox({
 }) {
   const touchStartX = useRef<number | null>(null);
 
-  // Opening a photo full-screen is the point right before someone would
-  // press-and-hold to save it, an action no website can observe directly.
-  // Logging here (rather than only on an explicit "download" click) is a
-  // much more realistic proxy for that.
+  // Logging the instant a photo opens counts every photo someone swipes
+  // past while browsing, not just ones they actually stop to look at (and
+  // likely press-and-hold to save). Waiting for a short pause before
+  // logging filters out quick flicks through the gallery; moving to the
+  // next/previous photo before the delay elapses cancels it.
   useEffect(() => {
-    fetch(`/api/view/${photo.id}?code=${encodeURIComponent(code)}`).catch(() => {});
+    const timer = setTimeout(() => {
+      fetch(`/api/view/${photo.id}?code=${encodeURIComponent(code)}`).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [code, photo.id]);
 
   return (
