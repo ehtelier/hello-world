@@ -47,21 +47,10 @@ export async function createUploadUrl(key: string, contentType: string) {
   return getSignedUrl(getClient(), command, { expiresIn: 60 * 15 });
 }
 
-// For displaying the original inline (gallery grid, video playback).
+// For displaying the original inline: the gallery grid, the lightbox, and
+// (via press-and-hold / right-click "save image") the actual save/download
+// path itself, rather than a separate forced-attachment link.
 export async function createViewUrl(key: string) {
   const command = new GetObjectCommand({ Bucket: bucketName(), Key: key });
-  return getSignedUrl(getClient(), command, { expiresIn: 60 * 60 });
-}
-
-// Forces a real download of the untouched original with its original
-// filename, rather than the browser just opening it inline.
-export async function createDownloadUrl(key: string, filename: string, contentType: string) {
-  const safeName = filename.replace(/["\r\n]/g, "_");
-  const command = new GetObjectCommand({
-    Bucket: bucketName(),
-    Key: key,
-    ResponseContentDisposition: `attachment; filename="${safeName}"`,
-    ResponseContentType: contentType,
-  });
   return getSignedUrl(getClient(), command, { expiresIn: 60 * 60 });
 }

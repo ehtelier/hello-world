@@ -5,7 +5,6 @@ import { useRef, useState } from "react";
 type Photo = {
   id: string;
   viewUrl: string;
-  downloadUrl: string;
   mimeType: string;
 };
 
@@ -16,9 +15,8 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
     <>
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-          gap: "6px",
+          columnCount: 2,
+          columnGap: "8px",
           width: "100%",
           maxWidth: "42rem",
         }}
@@ -30,10 +28,11 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
             onClick={() => setOpenIndex(index)}
             style={{
               display: "block",
-              position: "relative",
-              aspectRatio: "1",
+              width: "100%",
+              marginBottom: "8px",
+              breakInside: "avoid",
+              borderRadius: "4px",
               overflow: "hidden",
-              borderRadius: "6px",
               background: "rgba(128, 128, 128, 0.15)",
               border: "none",
               padding: 0,
@@ -46,7 +45,7 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
                 muted
                 playsInline
                 preload="metadata"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{ width: "100%", display: "block" }}
               />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
@@ -54,7 +53,7 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
                 src={photo.viewUrl}
                 alt=""
                 loading="lazy"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{ width: "100%", display: "block" }}
               />
             )}
           </button>
@@ -64,6 +63,8 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
       {openIndex !== null && (
         <Lightbox
           photo={photos[openIndex]}
+          index={openIndex}
+          total={photos.length}
           onClose={() => setOpenIndex(null)}
           onPrev={() => setOpenIndex((i) => (i === null ? null : (i - 1 + photos.length) % photos.length))}
           onNext={() => setOpenIndex((i) => (i === null ? null : (i + 1) % photos.length))}
@@ -75,16 +76,20 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
 
 function Lightbox({
   photo,
+  index,
+  total,
   onClose,
   onPrev,
   onNext,
 }: {
   photo: Photo;
+  index: number;
+  total: number;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
 }) {
-  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   return (
     <div
@@ -100,14 +105,16 @@ function Lightbox({
         padding: "16px",
       }}
       onTouchStart={(event) => {
-        touchStartX.current = event.touches[0].clientX;
+        touchStartY.current = event.touches[0].clientY;
       }}
       onTouchEnd={(event) => {
-        if (touchStartX.current === null) return;
-        const delta = event.changedTouches[0].clientX - touchStartX.current;
-        if (delta > 50) onPrev();
-        else if (delta < -50) onNext();
-        touchStartX.current = null;
+        if (touchStartY.current === null) return;
+        const delta = event.changedTouches[0].clientY - touchStartY.current;
+        // Swipe up (like TikTok/Instagram) advances to the next photo;
+        // swipe down goes back, matching a vertical feed gesture.
+        if (delta < -50) onNext();
+        else if (delta > 50) onPrev();
+        touchStartY.current = null;
       }}
     >
       <button
@@ -134,16 +141,18 @@ function Lightbox({
         aria-label="Previous"
         style={{
           position: "absolute",
-          left: 4,
+          top: 4,
+          left: "50%",
+          transform: "translateX(-50%)",
           background: "none",
           border: "none",
           color: "white",
-          fontSize: "2rem",
+          fontSize: "1.5rem",
           cursor: "pointer",
           padding: "12px",
         }}
       >
-        ‹
+        ▲
       </button>
       <button
         type="button"
@@ -151,16 +160,18 @@ function Lightbox({
         aria-label="Next"
         style={{
           position: "absolute",
-          right: 4,
+          bottom: 4,
+          left: "50%",
+          transform: "translateX(-50%)",
           background: "none",
           border: "none",
           color: "white",
-          fontSize: "2rem",
+          fontSize: "1.5rem",
           cursor: "pointer",
           padding: "12px",
         }}
       >
-        ›
+        ▼
       </button>
 
       <div
@@ -193,15 +204,12 @@ function Lightbox({
         style={{
           color: "rgba(255, 255, 255, 0.6)",
           fontSize: "0.8rem",
+          letterSpacing: "0.1em",
           marginTop: "16px",
           textAlign: "center",
         }}
       >
-        Press and hold to save to your photos, or{" "}
-        <a href={photo.downloadUrl} style={{ color: "white", textDecoration: "underline" }}>
-          download
-        </a>
-        .
+        {index + 1} / {total}
       </p>
     </div>
   );

@@ -1,6 +1,5 @@
 import { sql } from "@/lib/db";
-import { createDownloadUrl, createViewUrl } from "@/lib/r2";
-import { buildDownloadFilename } from "@/lib/downloadName";
+import { createViewUrl } from "@/lib/r2";
 import { resolveAccess } from "@/lib/access";
 import { UploadForm } from "./UploadForm";
 import { PhotoGrid } from "./PhotoGrid";
@@ -50,23 +49,17 @@ export default async function EventGallery({
 
   const { event, attendee } = access;
 
-  // Fetched oldest-first so the sequence number in each download's filename
-  // reflects upload order and stays stable as new photos are added later.
   const photosAsc = (await sql`
     SELECT * FROM photos WHERE event_id = ${event.id} ORDER BY uploaded_at ASC
   `) as PhotoRow[];
 
   const photosWithUrls = await Promise.all(
-    photosAsc.map(async (photo, index) => {
-      const downloadName = buildDownloadFilename(event.name, index + 1, photo.filename);
-      return {
-        ...photo,
-        viewUrl: await createViewUrl(photo.storage_key),
-        downloadUrl: await createDownloadUrl(photo.storage_key, downloadName, photo.mime_type),
-      };
-    })
+    photosAsc.map(async (photo) => ({
+      ...photo,
+      viewUrl: await createViewUrl(photo.storage_key),
+    }))
   );
-  // Newest first for display, independent of the ascending numbering above.
+  // Newest first for display.
   photosWithUrls.reverse();
 
   return (
@@ -98,7 +91,6 @@ export default async function EventGallery({
           photos={photosWithUrls.map((photo) => ({
             id: photo.id,
             viewUrl: photo.viewUrl,
-            downloadUrl: photo.downloadUrl,
             mimeType: photo.mime_type,
           }))}
         />

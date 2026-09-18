@@ -98,20 +98,23 @@ because they don't matter):
    videos via signed view URLs; tapping one downloads the untouched original
    via a signed URL with a forced `Content-Disposition: attachment`. This
    required a CORS policy on the R2 bucket, see below.
-   ✅ Added a full-screen swipeable lightbox (`PhotoGrid.tsx`) so tapping a
-   photo previews it (with prev/next) instead of immediately downloading;
-   this also fixes phones saving downloads to Files/Downloads instead of
-   Photos, since press-and-hold on a shown image triggers the OS's native
-   "Save to Photos" instead.
-   ✅ Downloaded files are renamed to `<Event Name> <sequence>.<ext>` (e.g.
-   `PPC 001 Marais 003.jpg`), numbered by upload order
-   (`src/lib/downloadName.ts`). This only changes the filename in the
-   download's `Content-Disposition` header — the original bytes and all
-   embedded metadata (EXIF date, GPS, etc.) are never touched, which means
-   phones still sort a saved photo into their camera roll by its original
-   capture date, not by when it was downloaded. This was a deliberate
-   tradeoff: fixing that sort-order would require stripping/rewriting EXIF
-   data, which was ruled out to keep originals byte-for-byte untouched.
+   ✅ Added a full-screen lightbox (`PhotoGrid.tsx`) so tapping a photo
+   previews it instead of immediately downloading. There is no separate
+   "download" action or link: the same signed view URL used for display is
+   what press-and-hold (mobile) or right-click "Save Image" (desktop) saves,
+   since showing the actual image, not forcing an attachment download, is
+   what lets the OS's native "Save to Photos" work at all (a forced download
+   lands in Files/Downloads instead). A per-event/per-attendee renamed
+   filename and a tracked "download" route were both tried and removed,
+   see below and the per-attendee tracking entry; the original filename and
+   all embedded metadata (EXIF date, GPS, etc.) are simply whatever was
+   uploaded, byte-for-byte untouched.
+   ✅ Reworked the grid to a two-column masonry layout (photos keep their
+   natural aspect ratio instead of being cropped to uniform squares) for a
+   more editorial, magazine-like feel. The lightbox responds to a vertical
+   swipe (up = next, down = previous), matching TikTok/Instagram-style feed
+   navigation, instead of the original left/right swipe, and shows a
+   `3 / 12` position counter instead of instructional text.
 4. ✅ Per-attendee access codes for contribution tracking. Each event keeps
    its original shared `code` (general/unattributed fallback access), and
    admins can now add named attendees to an event
