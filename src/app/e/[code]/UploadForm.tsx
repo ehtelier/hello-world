@@ -4,6 +4,18 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { confirmUpload, requestUpload } from "./actions";
 import { getCapturedAt } from "@/lib/capturedAt";
+import { captureVideoThumbnail } from "@/lib/videoThumbnail";
+
+async function putFile(uploadUrl: string, contentType: string, body: Blob) {
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body,
+  });
+  if (!response.ok) {
+    throw new Error("Upload failed");
+  }
+}
 
 export function UploadForm({ code }: { code: string }) {
   const router = useRouter();
@@ -13,37 +25,41 @@ export function UploadForm({ code }: { code: string }) {
   async function handleFiles(fileList: FileList) {
     const files = Array.from(fileList);
     let done = 0;
+    let failed = 0;
     setStatus(`Uploading 0 of ${files.length}...`);
 
-    try {
-      await Promise.all(
-        files.map(async (file) => {
-          const contentType = file.type || "application/octet-stream";
-          const capturedAt = await getCapturedAt(file);
-          const { uploadUrl, storageKey } = await requestUpload(code, file.name, contentType);
+    // One at a time, not all at once: large video files uploaded
+    // concurrently can exceed a phone's memory/connection and fail.
+    for (const file of files) {
+      try {
+        const contentType = file.type || "application/octet-stream";
+        const capturedAt = await getCapturedAt(file);
 
-          const response = await fetch(uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": contentType },
-            body: file,
-          });
-          if (!response.ok) {
-            throw new Error(`Upload failed for ${file.name}`);
+        const { uploadUrl, storageKey } = await requestUpload(code, file.name, contentType);
+        await putFile(uploadUrl, contentType, file);
+
+        let thumbKey: string | null = null;
+        if (contentType.startsWith("video/")) {
+          const thumbBlob = await captureVideoThumbnail(file);
+          if (thumbBlob) {
+            const thumb = await requestUpload(code, `${file.name}-thumb.jpg`, "image/jpeg");
+            await putFile(thumb.uploadUrl, "image/jpeg", thumbBlob);
+            thumbKey = thumb.storageKey;
           }
+        }
 
-          await confirmUpload(code, storageKey, file.name, contentType, file.size, capturedAt);
-          done += 1;
-          setStatus(`Uploading ${done} of ${files.length}...`);
-        })
-      );
-      setStatus("Done.");
-    } catch {
-      setStatus("Something went wrong. Try again.");
-    } finally {
-      if (inputRef.current) inputRef.current.value = "";
-      router.refresh();
-      setTimeout(() => setStatus(""), 2500);
+        await confirmUpload(code, storageKey, file.name, contentType, file.size, capturedAt, thumbKey);
+        done += 1;
+      } catch {
+        failed += 1;
+      }
+      setStatus(`Uploading ${done + failed} of ${files.length}...`);
     }
+
+    setStatus(failed > 0 ? `Done, but ${failed} failed. Try again for those.` : "Done.");
+    if (inputRef.current) inputRef.current.value = "";
+    router.refresh();
+    setTimeout(() => setStatus(""), 4000);
   }
 
   return (

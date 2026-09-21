@@ -7,6 +7,7 @@ import { PhotoGrid } from "./PhotoGrid";
 type PhotoRow = {
   id: string;
   storage_key: string;
+  thumb_key: string | null;
   filename: string;
   mime_type: string;
   byte_size: string;
@@ -69,6 +70,7 @@ export default async function EventGallery({
     photosByCaptureTime.map(async (photo) => ({
       ...photo,
       viewUrl: await createViewUrl(photo.storage_key),
+      thumbUrl: photo.thumb_key ? await createViewUrl(photo.thumb_key) : null,
     }))
   );
 
@@ -101,6 +103,7 @@ export default async function EventGallery({
           photos={photosWithUrls.map((photo) => ({
             id: photo.id,
             viewUrl: photo.viewUrl,
+            thumbUrl: photo.thumbUrl,
             mimeType: photo.mime_type,
             uploaderFirstName: photo.uploader_name ? firstNameOf(photo.uploader_name) : null,
           }))}

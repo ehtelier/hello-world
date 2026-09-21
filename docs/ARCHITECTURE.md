@@ -133,6 +133,20 @@ because they don't matter):
    `attendees.name` in `/e/[code]/page.tsx`; only the first word of the
    name is shown). Photos uploaded via the event's general/unattributed code
    have no attendee to credit, so the line is simply omitted for those.
+   ✅ Fixed two upload issues found once uploading real videos: (1) multiple
+   large videos uploaded at the same time could fail randomly, uploading
+   several at once could exceed a phone's memory/connection, especially for
+   video; `UploadForm.tsx` now uploads one file at a time instead of all in
+   parallel, and reports per-file failures individually rather than failing
+   the whole batch. (2) Videos had no preview in the grid (just a gray box):
+   `src/lib/videoThumbnail.ts` grabs a frame from the video client-side
+   (via an off-screen `<video>` + `<canvas>`, seeking slightly past frame 0
+   since that's often black) before upload, uploads it to R2 as a small
+   JPEG, and stores its key as `photos.thumb_key` (a column that existed in
+   the schema from the start but was unused until now). The grid shows that
+   thumbnail with a small play icon overlay; the lightbox still plays the
+   actual original video. Videos uploaded before this change have no
+   thumbnail and fall back to the old (blank-looking) inline `<video>`.
 4. ✅ Per-attendee access codes for contribution tracking. Each event keeps
    its original shared `code` (general/unattributed fallback access), and
    admins can now add named attendees to an event

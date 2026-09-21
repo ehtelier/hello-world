@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 type Photo = {
   id: string;
   viewUrl: string;
+  thumbUrl: string | null;
   mimeType: string;
   uploaderFirstName: string | null;
 };
@@ -41,13 +42,39 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
             }}
           >
             {photo.mimeType.startsWith("video/") ? (
-              <video
-                src={photo.viewUrl}
-                muted
-                playsInline
-                preload="metadata"
-                style={{ width: "100%", display: "block" }}
-              />
+              <div style={{ position: "relative" }}>
+                {photo.thumbUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photo.thumbUrl}
+                    alt=""
+                    loading="lazy"
+                    style={{ width: "100%", display: "block" }}
+                  />
+                ) : (
+                  <video
+                    src={photo.viewUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    style={{ width: "100%", display: "block" }}
+                  />
+                )}
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    color: "white",
+                    fontSize: "1.75rem",
+                    textShadow: "0 1px 6px rgba(0, 0, 0, 0.6)",
+                    pointerEvents: "none",
+                  }}
+                >
+                  ▶
+                </span>
+              </div>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
