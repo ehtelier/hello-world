@@ -6,22 +6,43 @@ import { confirmUpload, requestUpload } from "./actions";
 import { getCapturedAt } from "@/lib/capturedAt";
 import { captureVideoThumbnail } from "@/lib/videoThumbnail";
 
-async function putFile(uploadUrl: string, contentType: string, body: Blob) {
-  let response: Response;
-  try {
-    response = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: { "Content-Type": contentType },
-      body,
-    });
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(`network error (${reason})`);
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Mobile connections drop mid-transfer, especially on weak signal with
+// large video files; retry transient failures a couple of times before
+// giving up, with a short growing delay between attempts.
+async function putFile(uploadUrl: string, contentType: string, body: Blob, attempts = 3) {
+  let lastError: Error = new Error("upload failed");
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body,
+      });
+      if (response.ok) return;
+
+      const bodyText = await response.text().catch(() => "");
+      lastError = new Error(
+        `upload rejected: ${response.status} ${response.statusText}${bodyText ? ` — ${bodyText.slice(0, 200)}` : ""}`
+      );
+      // A real rejection (bad signature, expired URL, etc.) won't succeed
+      // on retry; only server errors are worth retrying.
+      if (response.status < 500) break;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      lastError = new Error(`network error (${reason})`);
+    }
+
+    if (attempt < attempts) {
+      await wait(1500 * attempt);
+    }
   }
-  if (!response.ok) {
-    const bodyText = await response.text().catch(() => "");
-    throw new Error(`upload rejected: ${response.status} ${response.statusText}${bodyText ? ` — ${bodyText.slice(0, 200)}` : ""}`);
-  }
+
+  throw lastError;
 }
 
 export function UploadForm({ code }: { code: string }) {

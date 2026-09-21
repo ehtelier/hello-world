@@ -147,6 +147,18 @@ because they don't matter):
    thumbnail with a small play icon overlay; the lightbox still plays the
    actual original video. Videos uploaded before this change have no
    thumbnail and fall back to the old (blank-looking) inline `<video>`.
+   ✅ Upload failures now show the real reason (HTTP status/response, or a
+   network error message) directly on the page instead of a generic
+   "something went wrong," since the actual file transfer goes straight
+   from the browser to R2 and never touches our server, so a failure there
+   never appears in Vercel's logs. Diagnosed a real large-video failure this
+   way ("network error (Load failed)" — a dropped connection on weak
+   cellular signal). `putFile` in `UploadForm.tsx` now retries a failed
+   upload up to 3 times with a short growing delay before giving up, since
+   large video files on mobile connections are meaningfully more exposed to
+   transient drops than small photos; a definitive rejection (bad
+   signature, expired URL) is not retried, only network errors and server
+   (5xx) errors are.
 4. ✅ Per-attendee access codes for contribution tracking. Each event keeps
    its original shared `code` (general/unattributed fallback access), and
    admins can now add named attendees to an event
