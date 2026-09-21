@@ -7,13 +7,20 @@ import { getCapturedAt } from "@/lib/capturedAt";
 import { captureVideoThumbnail } from "@/lib/videoThumbnail";
 
 async function putFile(uploadUrl: string, contentType: string, body: Blob) {
-  const response = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body,
-  });
+  let response: Response;
+  try {
+    response = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": contentType },
+      body,
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`network error (${reason})`);
+  }
   if (!response.ok) {
-    throw new Error("Upload failed");
+    const bodyText = await response.text().catch(() => "");
+    throw new Error(`upload rejected: ${response.status} ${response.statusText}${bodyText ? ` — ${bodyText.slice(0, 200)}` : ""}`);
   }
 }
 
@@ -25,7 +32,7 @@ export function UploadForm({ code }: { code: string }) {
   async function handleFiles(fileList: FileList) {
     const files = Array.from(fileList);
     let done = 0;
-    let failed = 0;
+    const failures: { name: string; reason: string }[] = [];
     setStatus(`Uploading 0 of ${files.length}...`);
 
     // One at a time, not all at once: large video files uploaded
@@ -50,16 +57,23 @@ export function UploadForm({ code }: { code: string }) {
 
         await confirmUpload(code, storageKey, file.name, contentType, file.size, capturedAt, thumbKey);
         done += 1;
-      } catch {
-        failed += 1;
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        failures.push({ name: file.name, reason });
       }
-      setStatus(`Uploading ${done + failed} of ${files.length}...`);
+      setStatus(`Uploading ${done + failures.length} of ${files.length}...`);
     }
 
-    setStatus(failed > 0 ? `Done, but ${failed} failed. Try again for those.` : "Done.");
+    if (failures.length > 0) {
+      setStatus(
+        `Done, but ${failures.length} failed: ${failures.map((f) => `${f.name} (${f.reason})`).join("; ")}`
+      );
+    } else {
+      setStatus("Done.");
+      setTimeout(() => setStatus(""), 4000);
+    }
     if (inputRef.current) inputRef.current.value = "";
     router.refresh();
-    setTimeout(() => setStatus(""), 4000);
   }
 
   return (
@@ -90,7 +104,11 @@ export function UploadForm({ code }: { code: string }) {
       >
         Upload photos & videos
       </label>
-      {status && <p style={{ fontSize: "0.85rem", opacity: 0.7 }}>{status}</p>}
+      {status && (
+        <p style={{ fontSize: "0.85rem", opacity: 0.7, maxWidth: "24rem", textAlign: "center" }}>
+          {status}
+        </p>
+      )}
     </div>
   );
 }
