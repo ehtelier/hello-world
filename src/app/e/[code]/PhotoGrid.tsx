@@ -6,6 +6,7 @@ type Photo = {
   id: string;
   viewUrl: string;
   mimeType: string;
+  uploaderFirstName: string | null;
 };
 
 export function PhotoGrid({ photos }: { photos: Photo[] }) {
@@ -212,17 +213,33 @@ function Lightbox({
         )}
       </div>
 
-      <p
-        style={{
-          color: "rgba(255, 255, 255, 0.6)",
-          fontSize: "0.8rem",
-          letterSpacing: "0.1em",
-          marginTop: "16px",
-          textAlign: "center",
-        }}
-      >
-        {index + 1} / {total}
-      </p>
+      <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+        <p
+          style={{
+            color: "rgba(255, 255, 255, 0.6)",
+            fontSize: "0.8rem",
+            letterSpacing: "0.1em",
+            textAlign: "center",
+          }}
+        >
+          {index + 1} / {total}
+        </p>
+        {photo.uploaderFirstName && (
+          <>
+            <div style={{ width: "24px", height: "1px", background: "rgba(255, 255, 255, 0.3)" }} />
+            <p
+              style={{
+                color: "rgba(255, 255, 255, 0.6)",
+                fontSize: "0.75rem",
+                letterSpacing: "0.05em",
+                textAlign: "center",
+              }}
+            >
+              Photo captured by {photo.uploaderFirstName}
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 }

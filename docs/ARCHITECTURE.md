@@ -127,6 +127,12 @@ because they don't matter):
    since video container metadata isn't parsed). Stored as `photos.taken_at`
    (nullable); sorting uses `COALESCE(taken_at, uploaded_at)` so older rows
    and anything without a readable date still sort sensibly.
+   ✅ The lightbox credits whoever uploaded each photo: "Photo captured by
+   `<first name>`", under a small divider below the position counter, for
+   photos uploaded via an attendee's personal code (joined from
+   `attendees.name` in `/e/[code]/page.tsx`; only the first word of the
+   name is shown). Photos uploaded via the event's general/unattributed code
+   have no attendee to credit, so the line is simply omitted for those.
 4. ✅ Per-attendee access codes for contribution tracking. Each event keeps
    its original shared `code` (general/unattributed fallback access), and
    admins can now add named attendees to an event

@@ -11,7 +11,12 @@ type PhotoRow = {
   mime_type: string;
   byte_size: string;
   uploaded_at: string;
+  uploader_name: string | null;
 };
+
+function firstNameOf(fullName: string): string {
+  return fullName.trim().split(/\s+/)[0] ?? fullName;
+}
 
 export default async function EventGallery({
   params,
@@ -53,9 +58,11 @@ export default async function EventGallery({
   // upload time if that's unknown), not by upload order, so the gallery
   // reads as the day actually unfolded no matter who uploaded what when.
   const photosByCaptureTime = (await sql`
-    SELECT * FROM photos
-    WHERE event_id = ${event.id}
-    ORDER BY COALESCE(taken_at, uploaded_at) ASC
+    SELECT photos.*, attendees.name AS uploader_name
+    FROM photos
+    LEFT JOIN attendees ON attendees.id = photos.attendee_id
+    WHERE photos.event_id = ${event.id}
+    ORDER BY COALESCE(photos.taken_at, photos.uploaded_at) ASC
   `) as PhotoRow[];
 
   const photosWithUrls = await Promise.all(
@@ -95,6 +102,7 @@ export default async function EventGallery({
             id: photo.id,
             viewUrl: photo.viewUrl,
             mimeType: photo.mime_type,
+            uploaderFirstName: photo.uploader_name ? firstNameOf(photo.uploader_name) : null,
           }))}
         />
       )}
