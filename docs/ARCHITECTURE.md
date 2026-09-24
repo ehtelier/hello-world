@@ -140,13 +140,24 @@ because they don't matter):
    parallel, and reports per-file failures individually rather than failing
    the whole batch. (2) Videos had no preview in the grid (just a gray box):
    `src/lib/videoThumbnail.ts` grabs a frame from the video client-side
-   (via an off-screen `<video>` + `<canvas>`, seeking slightly past frame 0
-   since that's often black) before upload, uploads it to R2 as a small
-   JPEG, and stores its key as `photos.thumb_key` (a column that existed in
-   the schema from the start but was unused until now). The grid shows that
-   thumbnail with a small play icon overlay; the lightbox still plays the
-   actual original video. Videos uploaded before this change have no
-   thumbnail and fall back to the old (blank-looking) inline `<video>`.
+   (via a `<video>` + `<canvas>`, seeking slightly past frame 0 since that's
+   often black) before upload, uploads it to R2 as a small JPEG, and stores
+   its key as `photos.thumb_key` (a column that existed in the schema from
+   the start but was unused until now). The grid shows that thumbnail with
+   a small play icon overlay; the lightbox still plays the actual original
+   video. Videos uploaded before this change have no thumbnail and fall
+   back to the old (blank-looking) inline `<video>`.
+
+   First attempt at this silently failed for some real videos, always
+   falling back to the blank preview with no visible error (thumbnail
+   generation failure is deliberately non-fatal, so it doesn't block the
+   actual upload). Root cause: the helper `<video>` element used to grab
+   the frame was never attached to the document, and mobile Safari in
+   particular can be unreliable loading/seeking a detached video. Fixed by
+   keeping it in the DOM (positioned off-screen) and, before seeking,
+   attempting a muted play/pause, since some browsers only fully decode a
+   frame once playback has actually started at least momentarily. Videos
+   uploaded before this fix still show no thumbnail unless re-uploaded.
    ✅ Upload failures now show the real reason (HTTP status/response, or a
    network error message) directly on the page instead of a generic
    "something went wrong," since the actual file transfer goes straight

@@ -19,11 +19,28 @@ export function captureVideoThumbnail(file: File): Promise<Blob | null> {
     video.preload = "metadata";
     video.muted = true;
     video.playsInline = true;
+    // Mobile Safari in particular can be unreliable loading/seeking a
+    // video that isn't actually attached to the page; keep it in the
+    // document but visually and interactively invisible.
+    video.style.position = "fixed";
+    video.style.left = "-9999px";
+    video.style.width = "1px";
+    video.style.height = "1px";
+    document.body.appendChild(video);
 
     const url = URL.createObjectURL(file);
     video.src = url;
 
-    video.onloadedmetadata = () => {
+    video.onloadedmetadata = async () => {
+      try {
+        // Some browsers only decode frames once playback has actually
+        // started at least momentarily; a muted, inline play/pause forces
+        // that without ever being visibly noticeable.
+        await video.play();
+        video.pause();
+      } catch {
+        // Autoplay could be blocked; still try seeking directly below.
+      }
       video.currentTime = Math.min(SEEK_TIME, video.duration || 0);
     };
 
