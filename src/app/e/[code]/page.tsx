@@ -15,10 +15,6 @@ type PhotoRow = {
   uploader_name: string | null;
 };
 
-function firstNameOf(fullName: string): string {
-  return fullName.trim().split(/\s+/)[0] ?? fullName;
-}
-
 export default async function EventGallery({
   params,
 }: {
@@ -53,15 +49,15 @@ export default async function EventGallery({
     );
   }
 
-  const { event, attendee } = access;
+  const { event, participant } = access;
 
   // Ordered by when each photo/video was actually taken (falling back to
   // upload time if that's unknown), not by upload order, so the gallery
   // reads as the day actually unfolded no matter who uploaded what when.
   const photosByCaptureTime = (await sql`
-    SELECT photos.*, attendees.name AS uploader_name
+    SELECT photos.*, participants.first_name AS uploader_name
     FROM photos
-    LEFT JOIN attendees ON attendees.id = photos.attendee_id
+    LEFT JOIN participants ON participants.id = photos.participant_id
     WHERE photos.event_id = ${event.id}
     ORDER BY COALESCE(photos.taken_at, photos.uploaded_at) ASC
   `) as PhotoRow[];
@@ -87,7 +83,7 @@ export default async function EventGallery({
     >
       <div style={{ textAlign: "center" }}>
         <p style={{ letterSpacing: "0.3em", fontSize: "0.7rem", opacity: 0.5 }}>
-          {attendee ? `YOU ARE IN, ${attendee.name.toUpperCase()}` : "YOU ARE IN"}
+          {participant ? `YOU ARE IN, ${participant.name.toUpperCase()}` : "YOU ARE IN"}
         </p>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 600 }}>{event.name}</h1>
       </div>
@@ -105,7 +101,7 @@ export default async function EventGallery({
             viewUrl: photo.viewUrl,
             thumbUrl: photo.thumbUrl,
             mimeType: photo.mime_type,
-            uploaderFirstName: photo.uploader_name ? firstNameOf(photo.uploader_name) : null,
+            uploaderFirstName: photo.uploader_name,
           }))}
         />
       )}

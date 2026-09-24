@@ -2,57 +2,56 @@ import { sql, type EventRow } from "@/lib/db";
 
 export type ResolvedAccess = {
   event: EventRow;
-  attendee: { id: string; name: string } | null;
+  participant: { id: string; eventParticipantId: string; name: string } | null;
 };
 
-type AttendeeAccessRow = {
-  attendee_id: string;
-  attendee_name: string;
-  event_id: string;
-  event_code: string;
-  event_name: string;
-  event_created_at: string;
-  event_disabled: boolean;
-  event_password_hash: string | null;
-  event_expires_at: string | null;
+type EventParticipantAccessRow = EventRow & {
+  ep_id: string;
+  ep_credential_status: "active" | "disabled";
+  participant_id: string;
+  participant_first_name: string;
+  participant_last_name: string | null;
 };
 
-// A code typed into the homepage or embedded in a QR link can be either an
-// attendee's personal code or an event's general/shared code. Both resolve
-// to the same event; only attendee codes carry a known identity, used to
-// attribute uploads and downloads to a specific person.
+function fullName(first: string, last: string | null): string {
+  return last ? `${first} ${last}` : first;
+}
+
+// A code typed into the homepage or embedded in a QR link can be either a
+// participant's personal event credential or an event's general/shared
+// code. Both resolve to the same event; only a participant credential
+// carries a known identity, used to attribute uploads to a specific
+// person. A disabled credential is treated as invalid, not as "general
+// access" — disabling someone's credential should actually deny them.
 export async function resolveAccess(rawCode: string): Promise<ResolvedAccess | null> {
   const code = rawCode.trim().toUpperCase();
 
-  const [attendeeRow] = (await sql`
+  const [row] = (await sql`
     SELECT
-      attendees.id AS attendee_id,
-      attendees.name AS attendee_name,
-      events.id AS event_id,
-      events.code AS event_code,
-      events.name AS event_name,
-      events.created_at AS event_created_at,
-      events.disabled AS event_disabled,
-      events.password_hash AS event_password_hash,
-      events.expires_at AS event_expires_at
-    FROM attendees
-    JOIN events ON events.id = attendees.event_id
-    WHERE attendees.code = ${code}
+      events.*,
+      event_participants.id AS ep_id,
+      event_participants.credential_status AS ep_credential_status,
+      participants.id AS participant_id,
+      participants.first_name AS participant_first_name,
+      participants.last_name AS participant_last_name
+    FROM event_participants
+    JOIN participants ON participants.id = event_participants.participant_id
+    JOIN events ON events.id = event_participants.event_id
+    WHERE event_participants.code = ${code}
     LIMIT 1
-  `) as AttendeeAccessRow[];
+  `) as EventParticipantAccessRow[];
 
-  if (attendeeRow) {
+  if (row) {
+    if (row.ep_credential_status !== "active") {
+      return null;
+    }
     return {
-      event: {
-        id: attendeeRow.event_id,
-        code: attendeeRow.event_code,
-        name: attendeeRow.event_name,
-        created_at: attendeeRow.event_created_at,
-        disabled: attendeeRow.event_disabled,
-        password_hash: attendeeRow.event_password_hash,
-        expires_at: attendeeRow.event_expires_at,
+      event: row,
+      participant: {
+        id: row.participant_id,
+        eventParticipantId: row.ep_id,
+        name: fullName(row.participant_first_name, row.participant_last_name),
       },
-      attendee: { id: attendeeRow.attendee_id, name: attendeeRow.attendee_name },
     };
   }
 
@@ -61,7 +60,7 @@ export async function resolveAccess(rawCode: string): Promise<ResolvedAccess | n
   `) as EventRow[];
 
   if (eventRow) {
-    return { event: eventRow, attendee: null };
+    return { event: eventRow, participant: null };
   }
 
   return null;

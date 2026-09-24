@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 let client: S3Client | null = null;
@@ -53,4 +53,9 @@ export async function createUploadUrl(key: string, contentType: string) {
 export async function createViewUrl(key: string) {
   const command = new GetObjectCommand({ Bucket: bucketName(), Key: key });
   return getSignedUrl(getClient(), command, { expiresIn: 60 * 60 });
+}
+
+// Used by admin gallery moderation when permanently removing media.
+export async function deleteObject(key: string) {
+  await getClient().send(new DeleteObjectCommand({ Bucket: bucketName(), Key: key }));
 }

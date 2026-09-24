@@ -189,11 +189,77 @@ because they don't matter):
    what was, at best, an approximation of a real download anyway.
    Contribution tracking (uploads) doesn't have this problem: an upload is
    a real, unambiguous action the server directly participates in.
-5. Thumbnail generation, image-first gallery grid polish (currently the grid
-   just displays scaled-down originals, functional but not bandwidth-
-   efficient for large photo counts).
-6. Later: password protection, expiration dates, video poster thumbnails,
-   per-photo delete.
+5. ✅ Photo thumbnails, video thumbnails (see per-attendee/video sections
+   above), and per-photo delete all landed as part of earlier stages above.
+6. ✅ Admin overhaul, from the organizer's own requirements doc: a
+   persistent **participant** identity (one record per real person, reused
+   across every event they attend) replacing the old per-event-only
+   attendee model, plus a much richer event record and real gallery
+   moderation tools.
+
+   **Data model.** `participants` (first/last name, contact info,
+   `ppc_pass`, internal notes, active flag) is the durable identity.
+   `event_participants` is the join: one row per (event, participant),
+   holding that person's event-specific passcode/QR (`code`),
+   `invitation_status` (considering/invited/accepted/declined/cancelled),
+   `attendance_status` (pending/attended/no_show, deliberately a separate
+   concept from invitation status per the spec), and `credential_status`
+   (active/disabled). `photos.participant_id` now points at the durable
+   `participants.id` directly (not at a per-event row), matching the
+   spec's "Media → Event → Participant, don't store the name on media"
+   model. `events` gained `ppc_number`, `event_date`, `start_time`,
+   `end_time`, `area`, `capacity`, `status`
+   (draft/inviting/confirmed/live/gallery/archived), the optional SHOOT/
+   DISCOVER/HANG itinerary fields, and meeting-point name/address/map-link/
+   estimated-steps text fields. `status` is deliberately independent of the
+   existing `disabled` access flag: per the spec, "disable ≠ delete", and
+   status is an organizational label that doesn't itself gate participant
+   access yet (automatic status-driven behavior is explicitly deferred).
+   The old `attendees` table and `photos.attendee_id` are superseded and no
+   longer read by the app; a one-time migration in `docs/schema.sql` copies
+   existing rows into the new tables (reusing the same ids, so no manual
+   remapping needed) rather than discarding them, and the old table/column
+   are left in place as an optional manual cleanup rather than dropped
+   automatically.
+
+   **Access resolution.** `resolveAccess` (`src/lib/access.ts`) now joins
+   `event_participants` + `participants` instead of `attendees`, and
+   treats a `disabled` credential as invalid access entirely (not as
+   falling back to general/unattributed access) — disabling someone's
+   credential is supposed to actually deny them, per the spec's credential
+   controls.
+
+   **Admin UI.** The dashboard (`/admin`) is now a slim event list (status,
+   date, participant count vs. capacity, total uploads) plus a collapsible
+   full create-event form; per-event management moved to a dedicated
+   `/admin/events/[id]` page covering: editable event details (same form,
+   reused via `EventForm.tsx`), a status dropdown, access disable/enable,
+   archive/reactivate, delete (existing confirm pattern), a contribution
+   summary (photos/videos/total/contributor count), the participant list
+   with inline invitation+attendance status editors and credential controls
+   (disable/reactivate, regenerate — which invalidates the old code by
+   simply replacing it — remove from event with confirmation, each with
+   its own QR), an add-participant form, and gallery moderation (every
+   photo/video with contributor, type, size, upload date, a link to view
+   the original, and delete with confirmation, which also removes the
+   objects from R2, not just the database row). `ConfirmButton.tsx` and
+   `AutoSubmitSelect.tsx` are small shared client components backing this
+   (the latter exists because an auto-submitting `<select>` needs an
+   actual Client Component boundary — an `onChange` handler cannot be
+   attached to an element rendered directly by a Server Component, even a
+   plain host element like `<select>`, only inside a `"use client"` file).
+
+   **Deliberately deferred**, matching the requirements doc's own Phase 2/
+   Later/"useful but not blocking" priority labels: The Brief and its
+   draft/published gate, meeting-point photo upload (the text fields exist,
+   the image upload+management flow doesn't), internal event notes,
+   participant notes, invitation-overview count widgets, photographer
+   filtering in the gallery, a dedicated participant detail/history page,
+   the "reinvite an existing participant to a new event" search flow (for
+   now, adding a participant to an event always creates a new participant
+   record — the underlying no-duplicate-identity data model is in place,
+   just not yet a UI for re-selecting someone across events), PPC Pass
+   management beyond the stored flag, and storage-usage reporting.
 
 ### R2 bucket CORS policy (required for uploads to work)
 
@@ -251,19 +317,52 @@ without a prefix.
 
 ```
 events
+  id                     uuid pk
+  code                   text unique, indexed   -- general/fallback access code
+  name                   text                   -- event title, e.g. "PPC 001: Palais Royal"
+  ppc_number             text nullable
+  created_at             timestamptz
+  disabled               boolean default false  -- access on/off; independent of status
+  status                 text                   -- draft/inviting/confirmed/live/gallery/archived
+  archived_at            timestamptz nullable
+  event_date             date nullable
+  start_time, end_time   text nullable
+  area                   text nullable          -- general area / arrondissement
+  capacity               int nullable
+  shoot_location, shoot_time,
+  discover_location, discover_time,
+  hang_location, hang_time                       -- optional itinerary, all text
+  meeting_point_name, meeting_point_address,
+  meeting_point_map_link, estimated_steps         -- optional meeting info, all text
+  password_hash          text nullable          -- deferred feature, column reserved
+  expires_at             timestamptz nullable   -- deferred feature, column reserved
+
+participants                                     -- one durable record per real person
   id            uuid pk
-  code          text unique, indexed   -- the 8-character random code
-  name          text                   -- e.g. "PPC 001: Palais Royal"
-  created_at    timestamptz
-  disabled      boolean default false
-  password_hash text nullable          -- deferred feature, column reserved
-  expires_at    timestamptz nullable   -- deferred feature, column reserved
+  first_name    text
+  last_name     text nullable
+  contact_info  text nullable
+  date_added    timestamptz
+  ppc_pass      boolean default false
+  internal_notes text nullable                  -- admin-only; no UI yet
+  active        boolean default true
+
+event_participants                               -- join: one row per (event, participant)
+  id                uuid pk
+  event_id          uuid fk -> events.id
+  participant_id    uuid fk -> participants.id
+  code              text unique, indexed         -- this person's credential for this event
+  invitation_status text   -- considering/invited/accepted/declined/cancelled
+  attendance_status text   -- pending/attended/no_show (separate from invitation_status)
+  credential_status text   -- active/disabled
+  date_invited      timestamptz
+  date_accepted     timestamptz nullable
 
 photos
   id            uuid pk
   event_id      uuid fk -> events.id
-  attendee_id   uuid nullable fk -> attendees.id  -- null = uploaded via the
-                                                   -- event's general code
+  participant_id uuid nullable fk -> participants.id  -- null = uploaded via the
+                                                        -- event's general code
   storage_key   text                   -- R2 key of the original file
   thumb_key     text nullable          -- R2 key of the generated thumbnail
   filename      text                   -- original filename, for download naming
@@ -272,14 +371,12 @@ photos
   uploaded_at   timestamptz
   taken_at      timestamptz nullable  -- when actually captured; gallery
                                        -- sorts by COALESCE(taken_at, uploaded_at)
-
-attendees
-  id            uuid pk
-  event_id      uuid fk -> events.id
-  code          text unique, indexed   -- this attendee's personal code
-  name          text
-  created_at    timestamptz
 ```
+
+Superseded, left in place (not dropped) rather than migrated destructively:
+`attendees` (per-event-only identity, replaced by participants +
+event_participants) and `photos.attendee_id` (replaced by
+`photos.participant_id`). See the migration notes in `docs/schema.sql`.
 
 ## Open items / needs owner input before next stage
 
