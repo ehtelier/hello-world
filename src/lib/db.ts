@@ -43,6 +43,13 @@ export type InvitationStatus = (typeof INVITATION_STATUSES)[number];
 export const ATTENDANCE_STATUSES = ["pending", "attended", "no_show"] as const;
 export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
 
+// Which event statuses a participant's page shows the itinerary / gallery /
+// upload form for. Shared between the participant page and the upload
+// server actions so a direct API call can't bypass what the UI hides.
+export const ITINERARY_VISIBLE_STATUSES: EventStatus[] = ["live"];
+export const GALLERY_VISIBLE_STATUSES: EventStatus[] = ["live", "gallery", "archived"];
+export const UPLOAD_ENABLED_STATUSES: EventStatus[] = ["live", "gallery"];
+
 export type EventRow = {
   id: string;
   code: string;

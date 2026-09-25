@@ -154,12 +154,14 @@ export async function updateEvent(eventId: string, formData: FormData) {
   revalidatePath("/admin");
 }
 
-export async function setEventStatus(eventId: string, status: EventStatus) {
+export async function setEventStatus(eventId: string, formData: FormData) {
   await requireAdmin();
+  const status = String(formData.get("status") ?? "") as EventStatus;
   if (!EVENT_STATUSES.includes(status)) return;
   await sql`UPDATE events SET status = ${status} WHERE id = ${eventId}`;
   revalidatePath(`/admin/events/${eventId}`);
   revalidatePath("/admin");
+  revalidatePath("/e/[code]", "page");
 }
 
 export async function toggleDisabled(eventId: string, nextDisabled: boolean) {

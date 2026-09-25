@@ -2,7 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
-import { sql } from "@/lib/db";
+import { sql, UPLOAD_ENABLED_STATUSES } from "@/lib/db";
 import { createUploadUrl } from "@/lib/r2";
 import { resolveAccess } from "@/lib/access";
 
@@ -12,7 +12,7 @@ function sanitizeFilename(name: string) {
 
 async function requireActiveAccess(code: string) {
   const access = await resolveAccess(code);
-  if (!access || access.event.disabled) {
+  if (!access || access.event.disabled || !UPLOAD_ENABLED_STATUSES.includes(access.event.status)) {
     throw new Error("This event does not accept uploads.");
   }
   return access;

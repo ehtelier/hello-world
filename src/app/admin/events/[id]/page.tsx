@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import QRCode from "qrcode";
-import { sql, EVENT_STATUSES, INVITATION_STATUSES, ATTENDANCE_STATUSES, type EventRow, type EventStatus } from "@/lib/db";
+import { sql, EVENT_STATUSES, INVITATION_STATUSES, ATTENDANCE_STATUSES, type EventRow } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { createViewUrl } from "@/lib/r2";
 import {
@@ -154,13 +154,7 @@ export default async function AdminEventDetail({
             {event.name}
           </h1>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <form
-              action={async (formData: FormData) => {
-                "use server";
-                await setEventStatus(eventId, formData.get("status") as EventStatus);
-              }}
-              style={{ display: "flex", gap: "6px" }}
-            >
+            <form action={setEventStatus.bind(null, eventId)} style={{ display: "flex", gap: "6px" }}>
               <AutoSubmitSelect name="status" options={EVENT_STATUSES} defaultValue={event.status} />
             </form>
             <form
