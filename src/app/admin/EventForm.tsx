@@ -1,5 +1,13 @@
 import type { EventRow } from "@/lib/db";
 
+// Neon returns `date` columns as JS Date objects at runtime (despite the
+// EventRow type saying string), so this has to accept either shape.
+function toDateInputValue(value: string | Date | null | undefined): string {
+  if (!value) return "";
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return value.slice(0, 10);
+}
+
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "10px",
@@ -66,7 +74,7 @@ export function EventForm({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px" }}>
-        <Field label="Date" name="event_date" type="date" defaultValue={event?.event_date?.slice(0, 10)} />
+        <Field label="Date" name="event_date" type="date" defaultValue={toDateInputValue(event?.event_date)} />
         <Field label="Start time" name="start_time" type="time" defaultValue={event?.start_time} />
         <Field label="End time" name="end_time" type="time" defaultValue={event?.end_time} />
         <Field label="Area / arrondissement" name="area" defaultValue={event?.area} />

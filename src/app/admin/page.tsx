@@ -101,7 +101,9 @@ export default async function AdminDashboard() {
               </span>
             </div>
             <p style={{ fontSize: "0.8rem", opacity: 0.6, marginTop: "4px" }}>
-              {event.event_date ? `${event.event_date} · ` : ""}
+              {event.event_date
+                ? `${new Date(event.event_date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} · `
+                : ""}
               {event.participant_count} participant{event.participant_count === 1 ? "" : "s"}
               {event.capacity ? ` / ${event.capacity} capacity` : ""} · {event.upload_count} uploaded
             </p>
