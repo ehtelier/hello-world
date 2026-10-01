@@ -26,7 +26,6 @@ type PhotoRow = {
 type Participant = NonNullable<Awaited<ReturnType<typeof resolveAccess>>>["participant"];
 
 const BRAND = "PARIS PHOTO CLUB";
-const editorialSerifStack = "var(--font-editorial-serif), Georgia, serif";
 const functionalSansStack = "var(--font-functional-sans), Arial, Helvetica, sans-serif";
 
 const screenStyle: React.CSSProperties = {
@@ -43,12 +42,17 @@ const screenStyle: React.CSSProperties = {
   fontFamily: functionalSansStack,
 };
 
+// Event titles use the same Montserrat system as the rest of the UI, not a
+// contrasting display face -- hierarchy comes from scale (a much larger
+// size than the surrounding text) and weight, not a different typeface.
+// Letter spacing stays minimal/moderate here, unlike the very wide tracking
+// used for small labels like PARIS PHOTO CLUB or PRIVATE ACCESS.
 const eventNameStyle: React.CSSProperties = {
-  fontFamily: editorialSerifStack,
+  fontFamily: functionalSansStack,
   fontWeight: 400,
   fontSize: "clamp(2.5rem, 11vw, 4rem)",
   lineHeight: 1,
-  letterSpacing: "-0.01em",
+  letterSpacing: "0.02em",
   textTransform: "uppercase",
 };
 

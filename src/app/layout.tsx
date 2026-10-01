@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Cinzel, Montserrat } from "next/font/google";
+import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,16 +12,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// The engraved display serif used only for the event name on the
-// participant-facing invitation/gallery pages.
-const editorialSerif = Cinzel({
-  variable: "--font-editorial-serif",
-  subsets: ["latin"],
-  weight: ["400"],
-});
-
-// The functional sans used for everything else on those same pages — brand
-// mark, labels, dates, and body copy.
+// The sans used across the participant-facing pages -- brand mark, labels,
+// dates, body copy, and (at a much larger size, for hierarchy via scale
+// rather than a contrasting typeface) event titles.
 const functionalSans = Montserrat({
   variable: "--font-functional-sans",
   subsets: ["latin"],
@@ -35,10 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${editorialSerif.variable} ${functionalSans.variable}`}
-    >
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${functionalSans.variable}`}>
       <body>{children}</body>
     </html>
   );
