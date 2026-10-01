@@ -85,9 +85,10 @@ function InvitationScreen({
         <h1
           style={{
             fontFamily: editorialSerifStack,
-            fontWeight: 700,
+            fontWeight: 800,
             fontSize: "clamp(2.75rem, 12vw, 4.5rem)",
             lineHeight: 1,
+            letterSpacing: "-0.01em",
             textTransform: "uppercase",
           }}
         >
@@ -100,7 +101,17 @@ function InvitationScreen({
           SHOOT → DISCOVER → HANG
         </p>
 
-        <p style={{ fontSize: "1rem", opacity: 0.8 }}>{closingLine}</p>
+        <p
+          style={{
+            fontFamily: editorialSerifStack,
+            fontStyle: "italic",
+            fontWeight: 500,
+            fontSize: "1.15rem",
+            opacity: 0.85,
+          }}
+        >
+          {closingLine}
+        </p>
       </div>
 
       <p style={{ fontSize: "0.6rem", letterSpacing: "0.2em", opacity: 0.35 }}>
@@ -135,9 +146,10 @@ function StageHeader({
       <h1
         style={{
           fontFamily: editorialSerifStack,
-          fontWeight: 700,
+          fontWeight: 800,
           fontSize: "clamp(2rem, 8vw, 3rem)",
           lineHeight: 1.05,
+          letterSpacing: "-0.01em",
           textTransform: "uppercase",
         }}
       >
@@ -145,7 +157,16 @@ function StageHeader({
       </h1>
       {dateAreaLine && <p style={{ fontSize: "0.8rem", opacity: 0.6, marginTop: "2px" }}>{dateAreaLine}</p>}
       {event.status === "archived" && (
-        <p style={{ maxWidth: "22rem", opacity: 0.7, marginTop: "8px" }}>
+        <p
+          style={{
+            maxWidth: "22rem",
+            opacity: 0.8,
+            marginTop: "8px",
+            fontFamily: editorialSerifStack,
+            fontStyle: "italic",
+            fontWeight: 500,
+          }}
+        >
           This event has wrapped. The gallery below is read-only.
         </p>
       )}

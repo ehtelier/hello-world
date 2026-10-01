@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { Geist, Geist_Mono, Bodoni_Moda } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,12 +12,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// The editorial display serif used for event names on the participant-facing
+// The editorial display serif used for event names (and, in italic, the
+// confident one-line closing statements) on the participant-facing
 // invitation/gallery pages — everything else stays on the sans-serif.
-const editorialSerif = Playfair_Display({
+const editorialSerif = Bodoni_Moda({
   variable: "--font-editorial-serif",
   subsets: ["latin"],
-  weight: ["600", "700", "900"],
+  weight: ["500", "600", "700", "800"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
