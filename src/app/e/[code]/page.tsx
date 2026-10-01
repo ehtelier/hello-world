@@ -87,7 +87,7 @@ function InvitationScreen({
         <h1
           style={{
             fontFamily: editorialSerifStack,
-            fontWeight: 800,
+            fontWeight: 400,
             fontSize: "clamp(2.75rem, 12vw, 4.5rem)",
             lineHeight: 1,
             letterSpacing: "-0.01em",
@@ -138,7 +138,7 @@ function StageHeader({
       <h1
         style={{
           fontFamily: editorialSerifStack,
-          fontWeight: 800,
+          fontWeight: 400,
           fontSize: "clamp(2rem, 8vw, 3rem)",
           lineHeight: 1.05,
           letterSpacing: "-0.01em",

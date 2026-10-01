@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 const editorialSerif = Cinzel({
   variable: "--font-editorial-serif",
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  weight: ["400"],
 });
 
 // The functional sans used for everything else on those same pages — brand
