@@ -8,6 +8,7 @@ import {
 import { createViewUrl } from "@/lib/r2";
 import { resolveAccess } from "@/lib/access";
 import { acceptInvitation, declineInvitation, markInvitationOpened } from "./actions";
+import { DeclineControl } from "./DeclineControl";
 import { UploadForm } from "./UploadForm";
 import { PhotoGrid } from "./PhotoGrid";
 
@@ -91,57 +92,40 @@ function PendingInvitationScreen({ event, code }: { event: EventRow; code: strin
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "28px" }}>
         <form action={acceptInvitation.bind(null, code)}>
-          <button
-            type="submit"
-            style={{
-              padding: "14px 32px",
-              borderRadius: "8px",
-              border: "none",
-              background: "var(--foreground)",
-              color: "var(--background)",
-              fontWeight: 600,
-              fontSize: "0.85rem",
-              letterSpacing: "0.1em",
-              cursor: "pointer",
-            }}
-          >
-            ACCEPT INVITATION
-          </button>
-        </form>
-        <form action={declineInvitation.bind(null, code)}>
           <button
             type="submit"
             style={{
               background: "none",
               border: "none",
+              padding: "18px 28px",
               color: "inherit",
-              opacity: 0.4,
-              fontSize: "0.75rem",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              letterSpacing: "0.15em",
               cursor: "pointer",
-              textDecoration: "underline",
             }}
           >
-            Decline
+            ACCEPT INVITATION →
           </button>
         </form>
+        <DeclineControl onDecline={declineInvitation.bind(null, code)} />
       </div>
     </main>
   );
 }
 
-// declined / cancelled: a quiet dead end, not an error.
-function RespondedScreen({ event, status }: { event: EventRow; status: "declined" | "cancelled" }) {
+// declined / cancelled: a quiet dead end, not a receipt. The event title
+// and an explanation of what they just did both go unsaid — the database
+// already knows; they don't need it repeated back to them.
+function RespondedScreen({ status }: { status: "declined" | "cancelled" }) {
   return (
     <main style={screenStyle}>
       <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", opacity: 0.45 }}>{BRAND}</p>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px" }}>
-        <h1 style={eventNameStyle}>{event.name}</h1>
-        <p style={{ fontSize: "0.95rem", opacity: 0.6 }}>
-          {status === "declined" ? "you declined this invitation." : "this invitation has been cancelled."}
-        </p>
-      </div>
+      <p style={{ fontSize: "0.75rem", letterSpacing: "0.25em", opacity: 0.5 }}>
+        {status === "declined" ? "MAYBE NEXT TIME." : "INVITATION CANCELLED."}
+      </p>
       <div />
     </main>
   );
@@ -463,7 +447,7 @@ export default async function EventGallery({
   }
 
   if (preBrief && participant && (participant.invitationStatus === "declined" || participant.invitationStatus === "cancelled")) {
-    return <RespondedScreen event={event} status={participant.invitationStatus} />;
+    return <RespondedScreen status={participant.invitationStatus} />;
   }
 
   if (preBrief) {

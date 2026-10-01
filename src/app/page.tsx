@@ -1,17 +1,30 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { checkCode } from "./actions";
+
+const functionalSansStack = "var(--font-functional-sans), Arial, Helvetica, sans-serif";
 
 export default function Home() {
   const router = useRouter();
   const [code, setCode] = useState("");
+  const [notRecognized, setNotRecognized] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = code.trim();
     if (!trimmed) return;
-    router.push(`/e/${encodeURIComponent(trimmed)}`);
+    setNotRecognized(false);
+    startTransition(async () => {
+      const valid = await checkCode(trimmed);
+      if (valid) {
+        router.push(`/e/${encodeURIComponent(trimmed)}`);
+      } else {
+        setNotRecognized(true);
+      }
+    });
   }
 
   return (
@@ -24,20 +37,16 @@ export default function Home() {
         justifyContent: "center",
         textAlign: "center",
         padding: "24px",
-        gap: "20px",
+        gap: "28px",
+        fontFamily: functionalSansStack,
       }}
     >
-      <p style={{ letterSpacing: "0.3em", fontSize: "0.7rem", opacity: 0.5 }}>
-        BY INVITATION ONLY
-      </p>
-      <h1 style={{ fontSize: "2rem", fontWeight: 600 }}>Paris Photo Club</h1>
-      <p style={{ letterSpacing: "0.2em", fontSize: "0.75rem", opacity: 0.6 }}>
-        SHOOT · DISCOVER · HANG
-      </p>
-      <p style={{ maxWidth: "28rem", opacity: 0.75 }}>
-        Every gallery belongs to a single outing and a single circle of
-        members. If you were given a code, enter it below. If you scanned a
-        code instead, you are already inside.
+      <p style={{ letterSpacing: "0.45em", fontSize: "1rem", opacity: 0.85 }}>PARIS PHOTO CLUB</p>
+      <p style={{ letterSpacing: "0.2em", fontSize: "0.75rem", opacity: 0.5 }}>SHOOT → DISCOVER → HANG</p>
+      <p style={{ fontSize: "0.85rem", letterSpacing: "0.1em", opacity: 0.6, lineHeight: 1.8 }}>
+        PRIVATE EXPERIENCES.
+        <br />
+        SHARED PERSPECTIVES.
       </p>
 
       <form
@@ -46,49 +55,65 @@ export default function Home() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "12px",
+          gap: "20px",
           marginTop: "12px",
           width: "100%",
-          maxWidth: "20rem",
+          maxWidth: "18rem",
         }}
       >
-        <input
-          value={code}
-          onChange={(event) => setCode(event.target.value)}
-          placeholder="ENTER CODE"
-          autoCapitalize="characters"
-          autoCorrect="off"
-          spellCheck={false}
-          style={{
-            width: "100%",
-            textAlign: "center",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            fontSize: "1.1rem",
-            padding: "14px 12px",
-            borderRadius: "8px",
-            border: "1px solid rgba(128, 128, 128, 0.4)",
-            background: "transparent",
-            color: "inherit",
-          }}
-        />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
+          <label htmlFor="code" style={{ fontSize: "0.65rem", letterSpacing: "0.25em", opacity: 0.45 }}>
+            ENTER YOUR CODE
+          </label>
+          <input
+            id="code"
+            value={code}
+            onChange={(event) => {
+              setCode(event.target.value);
+              setNotRecognized(false);
+            }}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            style={{
+              width: "100%",
+              textAlign: "center",
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+              fontSize: "1rem",
+              padding: "8px 4px",
+              border: "none",
+              borderBottom: "1px solid rgba(128, 128, 128, 0.4)",
+              borderRadius: 0,
+              background: "transparent",
+              color: "inherit",
+              fontFamily: "inherit",
+            }}
+          />
+        </div>
+
         <button
           type="submit"
+          disabled={isPending}
           style={{
-            width: "100%",
-            padding: "14px 12px",
-            borderRadius: "8px",
+            background: "none",
             border: "none",
-            background: "var(--foreground)",
-            color: "var(--background)",
-            fontSize: "0.95rem",
+            padding: "14px 24px",
+            color: "inherit",
             fontWeight: 600,
-            letterSpacing: "0.05em",
+            fontSize: "0.8rem",
+            letterSpacing: "0.2em",
             cursor: "pointer",
           }}
         >
-          Enter
+          ENTER
         </button>
+
+        {notRecognized && (
+          <p style={{ fontSize: "0.7rem", letterSpacing: "0.1em", opacity: 0.5 }}>
+            THAT CODE WASN’T RECOGNIZED.
+          </p>
+        )}
       </form>
     </main>
   );
