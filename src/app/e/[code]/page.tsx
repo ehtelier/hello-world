@@ -21,21 +21,97 @@ type PhotoRow = {
   uploader_name: string | null;
 };
 
-function formatEventWhen(event: EventRow): string | null {
-  const parts: string[] = [];
-  if (event.event_date) {
-    // Neon returns `date` columns as JS Date objects at runtime despite the
-    // EventRow type saying string, so this has to accept either shape.
-    const raw = event.event_date as unknown as string | Date;
-    const date = raw instanceof Date ? raw : new Date(raw);
-    if (!Number.isNaN(date.getTime())) {
-      parts.push(date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }));
-    }
-  }
-  if (event.area) parts.push(event.area);
-  return parts.length ? parts.join(" · ") : null;
+const BRAND = "PARIS PHOTO CLUB";
+const editorialSerifStack = "var(--font-editorial-serif), Georgia, serif";
+
+// Date-only columns carry no time zone; reading them with local getters can
+// roll the date back a day depending on the viewer's time zone, so this
+// reads UTC getters instead of letting toLocaleDateString pick local ones.
+function formatEventDateLine(event: EventRow): string | null {
+  if (!event.event_date) return null;
+  // Neon returns `date` columns as JS Date objects at runtime despite the
+  // EventRow type saying string, so this has to accept either shape.
+  const raw = event.event_date as unknown as string | Date;
+  const date = raw instanceof Date ? raw : new Date(raw);
+  if (Number.isNaN(date.getTime())) return null;
+  const day = date.getUTCDate();
+  const month = date.toLocaleDateString("en-US", { month: "long", timeZone: "UTC" }).toUpperCase();
+  const year = date.getUTCFullYear();
+  return `${day} ${month} ${year}`;
 }
 
+// draft / inviting / confirmed: the event hasn't started, so there's
+// nothing to show but the invitation itself — no itinerary, gallery, or
+// upload form yet, just the save-the-date.
+function InvitationScreen({
+  event,
+  participantName,
+}: {
+  event: EventRow;
+  participantName: string | null;
+}) {
+  const dateLine = formatEventDateLine(event);
+  const eyebrow =
+    event.status === "inviting" ? "YOU'RE INVITED" : event.status === "confirmed" ? "YOU'RE IN" : "NOT ANNOUNCED YET";
+  const closingLine = event.status === "draft" ? "Nothing to see yet." : "The rest will follow.";
+
+  return (
+    <main
+      style={{
+        flex: 1,
+        minHeight: "100dvh",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "40px 24px",
+        textAlign: "center",
+        gap: "40px",
+      }}
+    >
+      <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", opacity: 0.45 }}>{BRAND}</p>
+
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "18px" }}>
+        <div>
+          {event.ppc_number && (
+            <p style={{ fontSize: "0.7rem", letterSpacing: "0.25em", opacity: 0.5, marginBottom: "6px" }}>
+              {event.ppc_number}
+            </p>
+          )}
+          <p style={{ fontSize: "0.75rem", letterSpacing: "0.25em", opacity: 0.6 }}>{eyebrow}</p>
+        </div>
+
+        <h1
+          style={{
+            fontFamily: editorialSerifStack,
+            fontWeight: 700,
+            fontSize: "clamp(2.75rem, 12vw, 4.5rem)",
+            lineHeight: 1,
+            textTransform: "uppercase",
+          }}
+        >
+          {event.name}
+        </h1>
+
+        {dateLine && <p style={{ fontSize: "0.9rem", letterSpacing: "0.15em", opacity: 0.65 }}>{dateLine}</p>}
+
+        <p style={{ fontSize: "0.7rem", letterSpacing: "0.25em", opacity: 0.4, marginTop: "10px" }}>
+          SHOOT → DISCOVER → HANG
+        </p>
+
+        <p style={{ fontSize: "1rem", opacity: 0.8 }}>{closingLine}</p>
+      </div>
+
+      <p style={{ fontSize: "0.6rem", letterSpacing: "0.2em", opacity: 0.35 }}>
+        PRIVATE INVITATION{participantName ? ` · FOR ${participantName.toUpperCase()}` : ""}
+      </p>
+    </main>
+  );
+}
+
+// live / gallery / archived: the itinerary and/or gallery render below this,
+// so it's a compact header rather than a full-bleed screen.
 function StageHeader({
   event,
   participantName,
@@ -43,41 +119,36 @@ function StageHeader({
   event: EventRow;
   participantName: string | null;
 }) {
-  const when = formatEventWhen(event);
-  let eyebrow: string;
-  let bodyCopy: string | null = null;
+  const dateAreaLine = [formatEventDateLine(event), event.area].filter(Boolean).join(" · ");
 
-  switch (event.status) {
-    case "draft":
-      eyebrow = "NOT OPEN YET";
-      bodyCopy = "This event hasn't been announced yet. Check back soon.";
-      break;
-    case "inviting":
-      eyebrow = "YOU'RE INVITED";
-      bodyCopy = "More details, including where we're shooting, will follow closer to the day.";
-      break;
-    case "confirmed":
-      eyebrow = participantName ? `YOU'RE IN, ${participantName.toUpperCase()}` : "YOU'RE IN";
-      bodyCopy = "We'll share where we're shooting closer to the day.";
-      break;
-    case "live":
-      eyebrow = participantName ? `YOU'RE IN, ${participantName.toUpperCase()}` : "YOU'RE IN";
-      break;
-    case "gallery":
-      eyebrow = "THE GALLERY";
-      break;
-    case "archived":
-      eyebrow = "ARCHIVED";
-      bodyCopy = "This event has wrapped. The gallery below is read-only.";
-      break;
-  }
+  let eyebrow = participantName ? `YOU'RE IN, ${participantName.toUpperCase()}` : "YOU'RE IN";
+  if (event.status === "gallery") eyebrow = "THE GALLERY";
+  if (event.status === "archived") eyebrow = "ARCHIVED";
 
   return (
-    <div style={{ textAlign: "center" }}>
-      <p style={{ letterSpacing: "0.3em", fontSize: "0.7rem", opacity: 0.5 }}>{eyebrow}</p>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 600 }}>{event.name}</h1>
-      {when && <p style={{ fontSize: "0.85rem", opacity: 0.6, marginTop: "4px" }}>{when}</p>}
-      {bodyCopy && <p style={{ maxWidth: "22rem", opacity: 0.75, marginTop: "10px" }}>{bodyCopy}</p>}
+    <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+      <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", opacity: 0.4 }}>{BRAND}</p>
+      {event.ppc_number && (
+        <p style={{ fontSize: "0.65rem", letterSpacing: "0.25em", opacity: 0.45 }}>{event.ppc_number}</p>
+      )}
+      <p style={{ fontSize: "0.7rem", letterSpacing: "0.25em", opacity: 0.55, marginTop: "4px" }}>{eyebrow}</p>
+      <h1
+        style={{
+          fontFamily: editorialSerifStack,
+          fontWeight: 700,
+          fontSize: "clamp(2rem, 8vw, 3rem)",
+          lineHeight: 1.05,
+          textTransform: "uppercase",
+        }}
+      >
+        {event.name}
+      </h1>
+      {dateAreaLine && <p style={{ fontSize: "0.8rem", opacity: 0.6, marginTop: "2px" }}>{dateAreaLine}</p>}
+      {event.status === "archived" && (
+        <p style={{ maxWidth: "22rem", opacity: 0.7, marginTop: "8px" }}>
+          This event has wrapped. The gallery below is read-only.
+        </p>
+      )}
     </div>
   );
 }
@@ -187,6 +258,10 @@ export default async function EventGallery({
   }
 
   const { event, participant } = access;
+
+  if (event.status === "draft" || event.status === "inviting" || event.status === "confirmed") {
+    return <InvitationScreen event={event} participantName={participant?.name ?? null} />;
+  }
 
   const showItinerary = ITINERARY_VISIBLE_STATUSES.includes(event.status);
   const showGallery = GALLERY_VISIBLE_STATUSES.includes(event.status);
