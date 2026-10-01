@@ -525,12 +525,13 @@ export default async function EventGallery({
 
       {allowUpload && <UploadForm code={normalizedCode} />}
 
-      {showGallery &&
-        (photosWithUrls.length === 0 ? (
-          <p style={{ opacity: 0.6, textAlign: "center" }}>
-            No photos yet. Be the first to upload.
-          </p>
-        ) : (
+      {showGallery && photosWithUrls.length > 0 && (
+        <>
+          {event.status === "live" && (
+            <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5 }}>
+              {photosWithUrls.length} {photosWithUrls.length === 1 ? "MOMENT" : "MOMENTS"}
+            </p>
+          )}
           <PhotoGrid
             photos={photosWithUrls.map((photo) => ({
               id: photo.id,
@@ -540,7 +541,8 @@ export default async function EventGallery({
               uploaderFirstName: photo.uploader_name,
             }))}
           />
-        ))}
+        </>
+      )}
     </main>
   );
 }

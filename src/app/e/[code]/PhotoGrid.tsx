@@ -17,8 +17,9 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
     <>
       <div
         style={{
-          columnCount: 2,
-          columnGap: "8px",
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "2px",
           width: "100%",
           maxWidth: "42rem",
         }}
@@ -30,10 +31,9 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
             onClick={() => setOpenIndex(index)}
             style={{
               display: "block",
+              position: "relative",
               width: "100%",
-              marginBottom: "8px",
-              breakInside: "avoid",
-              borderRadius: "4px",
+              aspectRatio: "1",
               overflow: "hidden",
               background: "rgba(128, 128, 128, 0.15)",
               border: "none",
@@ -42,14 +42,14 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
             }}
           >
             {photo.mimeType.startsWith("video/") ? (
-              <div style={{ position: "relative" }}>
+              <>
                 {photo.thumbUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={photo.thumbUrl}
                     alt=""
                     loading="lazy"
-                    style={{ width: "100%", display: "block" }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
                 ) : (
                   <video
@@ -57,7 +57,7 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
                     muted
                     playsInline
                     preload="metadata"
-                    style={{ width: "100%", display: "block" }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
                 )}
                 <span
@@ -67,21 +67,21 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
                     left: "50%",
                     transform: "translate(-50%, -50%)",
                     color: "white",
-                    fontSize: "1.75rem",
+                    fontSize: "1.5rem",
                     textShadow: "0 1px 6px rgba(0, 0, 0, 0.6)",
                     pointerEvents: "none",
                   }}
                 >
                   ▶
                 </span>
-              </div>
+              </>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={photo.viewUrl}
                 alt=""
                 loading="lazy"
-                style={{ width: "100%", display: "block" }}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             )}
           </button>

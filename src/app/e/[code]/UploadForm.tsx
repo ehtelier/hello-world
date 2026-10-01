@@ -115,15 +115,20 @@ export function UploadForm({ code }: { code: string }) {
       <label
         htmlFor="upload-input"
         style={{
-          padding: "14px 28px",
-          borderRadius: "8px",
-          background: "var(--foreground)",
-          color: "var(--background)",
-          fontWeight: 600,
+          // Generous invisible touch target (padding) around delicate-
+          // looking text, rather than a filled button — the typography
+          // above this should stay the loudest thing on the page.
+          padding: "16px 20px",
+          fontFamily: "var(--font-functional-sans), Arial, Helvetica, sans-serif",
+          fontSize: "0.75rem",
+          letterSpacing: "0.2em",
+          color: "inherit",
+          textDecoration: "underline",
+          textUnderlineOffset: "4px",
           cursor: "pointer",
         }}
       >
-        + Add photos
+        ＋ ADD PHOTOS
       </label>
       {status && (
         <p style={{ fontSize: "0.85rem", opacity: 0.7, maxWidth: "24rem", textAlign: "center" }}>
