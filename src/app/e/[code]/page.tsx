@@ -23,6 +23,7 @@ type PhotoRow = {
 
 const BRAND = "PARIS PHOTO CLUB";
 const editorialSerifStack = "var(--font-editorial-serif), Georgia, serif";
+const functionalSansStack = "var(--font-functional-sans), Arial, Helvetica, sans-serif";
 
 // Date-only columns carry no time zone; reading them with local getters can
 // roll the date back a day depending on the viewer's time zone, so this
@@ -68,6 +69,7 @@ function InvitationScreen({
         padding: "40px 24px",
         textAlign: "center",
         gap: "40px",
+        fontFamily: functionalSansStack,
       }}
     >
       <p style={{ fontSize: "0.65rem", letterSpacing: "0.3em", opacity: 0.45 }}>{BRAND}</p>
@@ -101,17 +103,7 @@ function InvitationScreen({
           SHOOT → DISCOVER → HANG
         </p>
 
-        <p
-          style={{
-            fontFamily: editorialSerifStack,
-            fontStyle: "italic",
-            fontWeight: 500,
-            fontSize: "1.15rem",
-            opacity: 0.85,
-          }}
-        >
-          {closingLine}
-        </p>
+        <p style={{ fontWeight: 400, fontSize: "1.15rem", opacity: 0.85 }}>{closingLine}</p>
       </div>
 
       <p style={{ fontSize: "0.6rem", letterSpacing: "0.2em", opacity: 0.35 }}>
@@ -157,16 +149,7 @@ function StageHeader({
       </h1>
       {dateAreaLine && <p style={{ fontSize: "0.8rem", opacity: 0.6, marginTop: "2px" }}>{dateAreaLine}</p>}
       {event.status === "archived" && (
-        <p
-          style={{
-            maxWidth: "22rem",
-            opacity: 0.8,
-            marginTop: "8px",
-            fontFamily: editorialSerifStack,
-            fontStyle: "italic",
-            fontWeight: 500,
-          }}
-        >
+        <p style={{ maxWidth: "22rem", opacity: 0.8, marginTop: "8px", fontWeight: 400 }}>
           This event has wrapped. The gallery below is read-only.
         </p>
       )}
@@ -266,6 +249,7 @@ export default async function EventGallery({
           textAlign: "center",
           padding: "24px",
           gap: "16px",
+          fontFamily: functionalSansStack,
         }}
       >
         <p style={{ letterSpacing: "0.3em", fontSize: "0.7rem", opacity: 0.5 }}>
@@ -322,6 +306,7 @@ export default async function EventGallery({
         alignItems: "center",
         padding: "32px 20px",
         gap: "24px",
+        fontFamily: functionalSansStack,
       }}
     >
       <StageHeader event={event} participantName={participant?.name ?? null} />
