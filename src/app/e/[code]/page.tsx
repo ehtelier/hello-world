@@ -103,7 +103,7 @@ function InvitationScreen({
           SHOOT → DISCOVER → HANG
         </p>
 
-        <p style={{ fontWeight: 400, fontSize: "1.15rem", opacity: 0.85 }}>{closingLine}</p>
+        <p style={{ fontWeight: 400, fontSize: "0.85rem", opacity: 0.85 }}>{closingLine}</p>
       </div>
 
       <p style={{ fontSize: "0.6rem", letterSpacing: "0.2em", opacity: 0.35 }}>
