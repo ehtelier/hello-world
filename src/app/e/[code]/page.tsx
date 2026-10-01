@@ -367,7 +367,25 @@ function StageHeader({
   participantName: string | null;
   momentsCount: number | null;
 }) {
-  const dateAreaLine = [formatEventDateLine(event), event.area].filter(Boolean).join(" · ");
+  const dateLine = formatEventDateLine(event);
+
+  // live: streamlined on purpose — brand + PPC number, name, date, nothing
+  // else. No eyebrow, no "TODAY", no moments count; the itinerary and
+  // gallery/upload below speak for themselves.
+  if (event.status === "live") {
+    return (
+      <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+        <p style={{ display: "flex", gap: "14px", fontSize: "0.6rem", letterSpacing: "0.3em", opacity: 0.4 }}>
+          <span>{BRAND}</span>
+          {event.ppc_number && <span>{event.ppc_number}</span>}
+        </p>
+        <h1 style={{ ...eventNameStyle, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05 }}>{event.name}</h1>
+        {dateLine && <p style={{ fontSize: "0.8rem", opacity: 0.6 }}>{dateLine}</p>}
+      </div>
+    );
+  }
+
+  const dateAreaLine = [dateLine, event.area].filter(Boolean).join(" · ");
 
   let eyebrow = participantName ? `YOU'RE IN, ${participantName.toUpperCase()}` : "YOU'RE IN";
   if (event.status === "gallery") eyebrow = "THE GALLERY";
@@ -378,9 +396,6 @@ function StageHeader({
       <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", opacity: 0.4 }}>{BRAND}</p>
       {event.ppc_number && (
         <p style={{ fontSize: "0.65rem", letterSpacing: "0.25em", opacity: 0.45 }}>{event.ppc_number}</p>
-      )}
-      {event.status === "live" && (
-        <p style={{ fontSize: "0.7rem", letterSpacing: "0.3em", opacity: 0.5 }}>TODAY</p>
       )}
       <p style={{ fontSize: "0.7rem", letterSpacing: "0.25em", opacity: 0.55, marginTop: "4px" }}>{eyebrow}</p>
       <h1 style={{ ...eventNameStyle, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05 }}>{event.name}</h1>
