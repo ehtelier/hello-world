@@ -201,17 +201,18 @@ because they don't matter):
    `ppc_pass`, internal notes, active flag) is the durable identity.
    `event_participants` is the join: one row per (event, participant),
    holding that person's event-specific passcode/QR (`code`),
-   `invitation_status` (considering/invited/accepted/declined/cancelled),
+   `invitation_status` (superseded by the invitation lifecycle rebuild in
+   stage 7 below — see there for the current vocabulary),
    `attendance_status` (pending/attended/no_show, deliberately a separate
    concept from invitation status per the spec), and `credential_status`
    (active/disabled). `photos.participant_id` now points at the durable
    `participants.id` directly (not at a per-event row), matching the
    spec's "Media → Event → Participant, don't store the name on media"
    model. `events` gained `ppc_number`, `event_date`, `start_time`,
-   `end_time`, `area`, `capacity`, `status`
-   (draft/inviting/confirmed/live/gallery/archived), the optional SHOOT/
-   DISCOVER/HANG itinerary fields, and meeting-point name/address/map-link/
-   estimated-steps text fields. `status` is deliberately independent of the
+   `end_time`, `area`, `capacity`, `status` (a `brief` stage was added
+   between `confirmed` and `live` in stage 7 below), the optional SHOOT/
+   DISCOVER/HANG itinerary fields, and meeting-point name/address/map-link
+   text fields. `status` is deliberately independent of the
    existing `disabled` access flag: per the spec, "disable ≠ delete", and
    status is an organizational label that doesn't itself gate participant
    access yet (automatic status-driven behavior is explicitly deferred).
@@ -260,6 +261,55 @@ because they don't matter):
    record — the underlying no-duplicate-identity data model is in place,
    just not yet a UI for re-selecting someone across events), PPC Pass
    management beyond the stored flag, and storage-usage reporting.
+7. ✅ Participant invitation lifecycle rebuild, and the BRIEF event stage,
+   from the organizer's own lifecycle writeup. The key structural point:
+   **there are two separate state machines, not one.** An event's `status`
+   (`draft → inviting → confirmed → brief → live → gallery → archived`) is
+   an organizer-facing stage that applies to the whole event. A
+   participant's `invitation_status`
+   (`invited → opened → accepted → declined/cancelled`) is per-person and
+   independent — Amber can be `accepted` on an event that's still
+   `inviting` while Jules is still `invited`. `opened` is set automatically
+   by the participant's own first page view (`markInvitationOpened` in
+   `src/app/e/[code]/actions.ts`), never by the organizer. Real timestamps
+   (`invited_at`, `first_opened_at`, `accepted_at`, `declined_at`) are
+   stored alongside the labels specifically so acceptance-rate/response-time
+   metrics are possible later without an analytics system — see
+   `docs/schema.sql`'s rename of `date_invited`/`date_accepted` and the two
+   new columns.
+
+   **The participant experience** is now: personal link arrives → opens it
+   (silently recorded) → sees a minimal pre-acceptance screen (event name,
+   date, time range, area — no gallery credential to remember yet) → taps
+   **ACCEPT INVITATION** (or a quiet **Decline**) → immediately becomes the
+   existing "YOU'RE IN ... the rest will follow" save-the-date screen, now
+   with that exact eyebrow text (it used to say "YOU'RE INVITED" at this
+   stage; that copy is reserved for the pre-accept screen's sibling case —
+   someone using the event's general/unattributed code, which has no accept
+   step at all) → silence until the organizer "releases the Brief"
+   (`releaseBrief` in `src/app/admin/actions.ts`, available once the event
+   is `confirmed`) → a dedicated full-screen reveal (`BriefScreen` in
+   `src/app/e/[code]/page.tsx`) showing MEET/SHOOT/DISCOVER/HANG with real
+   times and locations → `live` on the day itself (compact header now reads
+   "TODAY", meeting point renamed "MEET HERE"/"Open in Maps" for clarity) →
+   `gallery` (now shows a "`N` MOMENTS" count next to the upload/browse
+   experience, upload button relabeled "+ Add photos") → `archived` (same
+   moments count, plus a read-only SHOOT/DISCOVER/HANG location recap with
+   no times — an artifact, not a live itinerary). A participant who
+   declined or was cancelled sees a quiet dead-end screen instead of either
+   the accept prompt or the save-the-date, so they're not asked twice.
+   `estimated_steps` is dropped as a formal field (reads like a fitness app);
+   the column stays in the database, unused, rather than being dropped
+   outright. A new `meeting_point_time` field (separate from `shoot_time`)
+   backs the Brief's "MEET 13:45" ahead of "SHOOT 14:00".
+
+   **Deliberately deferred, still**: the meeting-point photograph on the
+   Brief screen (needs its own upload+management flow, same as the earlier
+   admin overhaul's deferred item), automatic time-based stage transitions
+   (an organizer action drives every stage change; nothing fires on a
+   clock), and an admin-side view of invitation acceptance-rate/response-time
+   metrics (the timestamps exist now specifically so this is possible
+   later, just not built yet).
 
 ### R2 bucket CORS policy (required for uploads to work)
 
@@ -323,7 +373,7 @@ events
   ppc_number             text nullable
   created_at             timestamptz
   disabled               boolean default false  -- access on/off; independent of status
-  status                 text                   -- draft/inviting/confirmed/live/gallery/archived
+  status                 text                   -- draft/inviting/confirmed/brief/live/gallery/archived
   archived_at            timestamptz nullable
   event_date             date nullable
   start_time, end_time   text nullable
@@ -333,7 +383,7 @@ events
   discover_location, discover_time,
   hang_location, hang_time                       -- optional itinerary, all text
   meeting_point_name, meeting_point_address,
-  meeting_point_map_link, estimated_steps         -- optional meeting info, all text
+  meeting_point_map_link, meeting_point_time      -- optional meeting info, all text
   password_hash          text nullable          -- deferred feature, column reserved
   expires_at             timestamptz nullable   -- deferred feature, column reserved
 
@@ -352,11 +402,13 @@ event_participants                               -- join: one row per (event, pa
   event_id          uuid fk -> events.id
   participant_id    uuid fk -> participants.id
   code              text unique, indexed         -- this person's credential for this event
-  invitation_status text   -- considering/invited/accepted/declined/cancelled
+  invitation_status text   -- invited/opened/accepted/declined/cancelled
   attendance_status text   -- pending/attended/no_show (separate from invitation_status)
   credential_status text   -- active/disabled
-  date_invited      timestamptz
-  date_accepted     timestamptz nullable
+  invited_at        timestamptz
+  first_opened_at   timestamptz nullable  -- set automatically by their own first page view
+  accepted_at       timestamptz nullable
+  declined_at       timestamptz nullable
 
 photos
   id            uuid pk

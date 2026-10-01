@@ -91,7 +91,7 @@ function eventDetailFields(formData: FormData) {
     meetingPointName: text(formData, "meeting_point_name"),
     meetingPointAddress: text(formData, "meeting_point_address"),
     meetingPointMapLink: text(formData, "meeting_point_map_link"),
-    estimatedSteps: text(formData, "estimated_steps"),
+    meetingPointTime: text(formData, "meeting_point_time"),
   };
 }
 
@@ -108,12 +108,12 @@ export async function createEvent(formData: FormData) {
         code, name, ppc_number, event_date, start_time, end_time, area, capacity,
         shoot_location, shoot_time, discover_location, discover_time,
         hang_location, hang_time, meeting_point_name, meeting_point_address,
-        meeting_point_map_link, estimated_steps
+        meeting_point_map_link, meeting_point_time
       ) VALUES (
         ${code}, ${name}, ${f.ppcNumber}, ${f.eventDate}, ${f.startTime}, ${f.endTime}, ${f.area}, ${f.capacity},
         ${f.shootLocation}, ${f.shootTime}, ${f.discoverLocation}, ${f.discoverTime},
         ${f.hangLocation}, ${f.hangTime}, ${f.meetingPointName}, ${f.meetingPointAddress},
-        ${f.meetingPointMapLink}, ${f.estimatedSteps}
+        ${f.meetingPointMapLink}, ${f.meetingPointTime}
       )
     `
   );
@@ -146,7 +146,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
       meeting_point_name = ${f.meetingPointName},
       meeting_point_address = ${f.meetingPointAddress},
       meeting_point_map_link = ${f.meetingPointMapLink},
-      estimated_steps = ${f.estimatedSteps}
+      meeting_point_time = ${f.meetingPointTime}
     WHERE id = ${eventId}
   `;
 
@@ -159,6 +159,14 @@ export async function setEventStatus(eventId: string, formData: FormData) {
   const status = String(formData.get("status") ?? "") as EventStatus;
   if (!EVENT_STATUSES.includes(status)) return;
   await sql`UPDATE events SET status = ${status} WHERE id = ${eventId}`;
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath("/admin");
+  revalidatePath("/e/[code]", "page");
+}
+
+export async function releaseBrief(eventId: string) {
+  await requireAdmin();
+  await sql`UPDATE events SET status = 'brief' WHERE id = ${eventId}`;
   revalidatePath(`/admin/events/${eventId}`);
   revalidatePath("/admin");
   revalidatePath("/e/[code]", "page");
@@ -239,13 +247,18 @@ export async function updateParticipantStatus(
     SET
       invitation_status = ${invitationStatus},
       attendance_status = ${attendanceStatus},
-      date_accepted = CASE
-        WHEN ${invitationStatus} = 'accepted' THEN COALESCE(date_accepted, now())
-        ELSE date_accepted
+      accepted_at = CASE
+        WHEN ${invitationStatus} = 'accepted' THEN COALESCE(accepted_at, now())
+        ELSE accepted_at
+      END,
+      declined_at = CASE
+        WHEN ${invitationStatus} = 'declined' THEN COALESCE(declined_at, now())
+        ELSE declined_at
       END
     WHERE id = ${eventParticipantId}
   `;
   revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath("/e/[code]", "page");
 }
 
 export async function toggleCredential(

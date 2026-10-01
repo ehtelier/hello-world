@@ -21,19 +21,28 @@ export function sql(strings: TemplateStringsArray, ...values: unknown[]) {
   return getClient()(strings, ...values);
 }
 
+// BRIEF sits between CONFIRMED (group assembled, invites closed) and LIVE
+// (the outing itself): the organizer explicitly "releases the brief"
+// ~24-48h out, revealing the itinerary on what was previously just a
+// save-the-date.
 export const EVENT_STATUSES = [
   "draft",
   "inviting",
   "confirmed",
+  "brief",
   "live",
   "gallery",
   "archived",
 ] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
+// A participant's invitation lifecycle is a separate state machine from the
+// event's status above — Amber can be ACCEPTED on an event that's still
+// INVITING while Jules is still INVITED. "opened" is set automatically by
+// the participant's own first page view, not an organizer action.
 export const INVITATION_STATUSES = [
-  "considering",
   "invited",
+  "opened",
   "accepted",
   "declined",
   "cancelled",
@@ -74,7 +83,7 @@ export type EventRow = {
   meeting_point_name: string | null;
   meeting_point_address: string | null;
   meeting_point_map_link: string | null;
-  estimated_steps: string | null;
+  meeting_point_time: string | null;
   archived_at: string | null;
 };
 
@@ -97,6 +106,8 @@ export type EventParticipantRow = {
   invitation_status: InvitationStatus;
   attendance_status: AttendanceStatus;
   credential_status: "active" | "disabled";
-  date_invited: string;
-  date_accepted: string | null;
+  invited_at: string;
+  first_opened_at: string | null;
+  accepted_at: string | null;
+  declined_at: string | null;
 };

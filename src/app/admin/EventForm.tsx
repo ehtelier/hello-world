@@ -98,9 +98,9 @@ export function EventForm({
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px" }}>
         <Field label="Meeting point name" name="meeting_point_name" defaultValue={event?.meeting_point_name} />
+        <Field label="Meeting time" name="meeting_point_time" type="time" defaultValue={event?.meeting_point_time} />
         <Field label="Address" name="meeting_point_address" defaultValue={event?.meeting_point_address} />
         <Field label="Map link" name="meeting_point_map_link" defaultValue={event?.meeting_point_map_link} />
-        <Field label="Estimated steps" name="estimated_steps" defaultValue={event?.estimated_steps} />
       </div>
 
       <button

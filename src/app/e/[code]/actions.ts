@@ -18,6 +18,41 @@ async function requireActiveAccess(code: string) {
   return access;
 }
 
+// Sets automatically by the participant's own first page view, not an
+// organizer action — "invited" -> "opened" only, never overwrites a later
+// state (accepted/declined/cancelled).
+export async function markInvitationOpened(code: string) {
+  const access = await resolveAccess(code);
+  if (!access?.participant) return;
+  await sql`
+    UPDATE event_participants
+    SET invitation_status = 'opened', first_opened_at = COALESCE(first_opened_at, now())
+    WHERE id = ${access.participant.eventParticipantId} AND invitation_status = 'invited'
+  `;
+}
+
+export async function acceptInvitation(code: string) {
+  const access = await resolveAccess(code);
+  if (!access?.participant || access.event.disabled) return;
+  await sql`
+    UPDATE event_participants
+    SET invitation_status = 'accepted', accepted_at = COALESCE(accepted_at, now())
+    WHERE id = ${access.participant.eventParticipantId}
+  `;
+  revalidatePath(`/e/${code}`);
+}
+
+export async function declineInvitation(code: string) {
+  const access = await resolveAccess(code);
+  if (!access?.participant || access.event.disabled) return;
+  await sql`
+    UPDATE event_participants
+    SET invitation_status = 'declined', declined_at = COALESCE(declined_at, now())
+    WHERE id = ${access.participant.eventParticipantId}
+  `;
+  revalidatePath(`/e/${code}`);
+}
+
 export async function requestUpload(code: string, filename: string, contentType: string) {
   const { event } = await requireActiveAccess(code);
   const type = contentType || "application/octet-stream";

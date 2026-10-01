@@ -9,6 +9,7 @@ import {
   archiveEvent,
   deletePhoto,
   regenerateCredential,
+  releaseBrief,
   removeParticipant,
   setEventStatus,
   toggleCredential,
@@ -29,7 +30,10 @@ type EventParticipantWithName = {
   invitation_status: string;
   attendance_status: string;
   credential_status: "active" | "disabled";
-  date_invited: string;
+  invited_at: string;
+  first_opened_at: string | null;
+  accepted_at: string | null;
+  declined_at: string | null;
   first_name: string;
   last_name: string | null;
   photo_count: number;
@@ -80,7 +84,10 @@ export default async function AdminEventDetail({
       event_participants.invitation_status,
       event_participants.attendance_status,
       event_participants.credential_status,
-      event_participants.date_invited,
+      event_participants.invited_at,
+      event_participants.first_opened_at,
+      event_participants.accepted_at,
+      event_participants.declined_at,
       participants.first_name,
       participants.last_name,
       COUNT(photos.id) FILTER (WHERE photos.mime_type LIKE 'image/%')::int AS photo_count,
@@ -91,7 +98,7 @@ export default async function AdminEventDetail({
     LEFT JOIN photos ON photos.participant_id = participants.id AND photos.event_id = event_participants.event_id
     WHERE event_participants.event_id = ${eventId}
     GROUP BY event_participants.id, participants.id
-    ORDER BY event_participants.date_invited ASC
+    ORDER BY event_participants.invited_at ASC
   `) as EventParticipantWithName[];
 
   const participantsWithQr = await Promise.all(
@@ -157,6 +164,24 @@ export default async function AdminEventDetail({
             <form action={setEventStatus.bind(null, eventId)} style={{ display: "flex", gap: "6px" }}>
               <AutoSubmitSelect name="status" options={EVENT_STATUSES} defaultValue={event.status} />
             </form>
+            {event.status === "confirmed" && (
+              <form action={async () => { "use server"; await releaseBrief(eventId); }}>
+                <button
+                  type="submit"
+                  style={{
+                    background: "none",
+                    border: "1px solid rgba(128, 128, 128, 0.4)",
+                    borderRadius: "6px",
+                    padding: "6px 10px",
+                    color: "inherit",
+                    cursor: "pointer",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  Release the Brief
+                </button>
+              </form>
+            )}
             <form
               action={async () => {
                 "use server";
@@ -249,6 +274,16 @@ export default async function AdminEventDetail({
                 <p style={{ fontSize: "0.75rem", opacity: 0.6 }}>
                   {p.photo_count} photos · {p.video_count} videos ({p.total_count} total)
                   {p.credential_status === "disabled" ? " · credential disabled" : ""}
+                </p>
+                <p style={{ fontSize: "0.7rem", opacity: 0.45 }}>
+                  {[
+                    `Invited ${formatDate(p.invited_at)}`,
+                    p.first_opened_at && `Opened ${formatDate(p.first_opened_at)}`,
+                    p.accepted_at && `Accepted ${formatDate(p.accepted_at)}`,
+                    p.declined_at && `Declined ${formatDate(p.declined_at)}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
 
                 <form

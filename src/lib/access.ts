@@ -1,13 +1,19 @@
-import { sql, type EventRow } from "@/lib/db";
+import { sql, type EventRow, type InvitationStatus } from "@/lib/db";
 
 export type ResolvedAccess = {
   event: EventRow;
-  participant: { id: string; eventParticipantId: string; name: string } | null;
+  participant: {
+    id: string;
+    eventParticipantId: string;
+    name: string;
+    invitationStatus: InvitationStatus;
+  } | null;
 };
 
 type EventParticipantAccessRow = EventRow & {
   ep_id: string;
   ep_credential_status: "active" | "disabled";
+  ep_invitation_status: InvitationStatus;
   participant_id: string;
   participant_first_name: string;
   participant_last_name: string | null;
@@ -31,6 +37,7 @@ export async function resolveAccess(rawCode: string): Promise<ResolvedAccess | n
       events.*,
       event_participants.id AS ep_id,
       event_participants.credential_status AS ep_credential_status,
+      event_participants.invitation_status AS ep_invitation_status,
       participants.id AS participant_id,
       participants.first_name AS participant_first_name,
       participants.last_name AS participant_last_name
@@ -51,6 +58,7 @@ export async function resolveAccess(rawCode: string): Promise<ResolvedAccess | n
         id: row.participant_id,
         eventParticipantId: row.ep_id,
         name: fullName(row.participant_first_name, row.participant_last_name),
+        invitationStatus: row.ep_invitation_status,
       },
     };
   }

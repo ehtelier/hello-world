@@ -14,6 +14,7 @@ const STATUS_LABEL: Record<EventStatus, string> = {
   draft: "Draft",
   inviting: "Inviting",
   confirmed: "Confirmed",
+  brief: "Brief",
   live: "Live",
   gallery: "Gallery",
   archived: "Archived",

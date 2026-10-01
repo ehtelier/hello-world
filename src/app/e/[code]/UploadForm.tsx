@@ -123,7 +123,7 @@ export function UploadForm({ code }: { code: string }) {
           cursor: "pointer",
         }}
       >
-        Upload photos & videos
+        + Add photos
       </label>
       {status && (
         <p style={{ fontSize: "0.85rem", opacity: 0.7, maxWidth: "24rem", textAlign: "center" }}>
