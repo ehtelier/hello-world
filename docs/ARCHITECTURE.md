@@ -20,6 +20,41 @@ Non-negotiable: **uploaded originals are never compressed, resized, or
 re-encoded.** Thumbnails are a separate, additional asset used only for
 browsing.
 
+## Guest-facing design system (permanent rules)
+
+Established once the Cinzel/Montserrat pairing was retired in favor of a
+single-typeface system. These apply to every participant-facing screen —
+homepage, invitation, accepted, brief, live, gallery, archived — and are
+permanent, not a per-screen style choice to re-litigate. **Not** binding on
+the admin dashboard, which stays a plain, utilitarian back-office tool.
+
+- **Montserrat is the only typeface.** No second/contrasting font for
+  event names or anything else.
+- **Event names get their identity through large scale, not a second
+  font.** Hierarchy comes from size and weight, never a different
+  typeface.
+- **Utility/status language** (brand mark, PPC number, dates, stage
+  labels, "MOMENTS" counts, etc.) **gets wide tracking, small size, and
+  muted grey** (dial opacity down, don't introduce a separate color).
+- **Primary actions are bright text + →**, never a conventional filled
+  button — unless a native control is functionally necessary (a native
+  `<input type="file">`, a `<select>`).
+- **Secondary actions are quiet grey text** (lower opacity, smaller size),
+  never their own button chrome.
+- **Black and negative space do most of the visual work.** Reach for
+  spacing and contrast before reaching for a border, box, or fill.
+- **Motion stays extremely restrained**: fades/transitions only (e.g. the
+  homepage's "WELCOME, &lt;NAME&gt;" swap before navigating). No flashy
+  animation, no loading spinners, no modals for confirmation — see the
+  Decline flow's inline typographic confirmation sheet instead of a native
+  `confirm()` or a modal.
+- **Native browser controls should be visually integrated** wherever
+  possible without sacrificing usability/accessibility — transparent
+  backgrounds, inherited color/font, underlines instead of borders — but
+  stay real `<input>`/`<select>`/`<button>` elements with generous tap
+  targets. Style them to disappear into the page; don't replace them with
+  custom non-native widgets.
+
 ## Stack decisions (finalized)
 
 | Layer | Choice | Rationale |
