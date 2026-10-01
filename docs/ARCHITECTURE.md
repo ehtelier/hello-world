@@ -41,8 +41,8 @@ the admin dashboard, which stays a plain, utilitarian back-office tool.
   `<input type="file">`, a `<select>`).
 - **Secondary actions are quiet grey text** (lower opacity, smaller size),
   never their own button chrome.
-- **Black and negative space do most of the visual work.** Reach for
-  spacing and contrast before reaching for a border, box, or fill.
+- **Negative space does most of the visual work.** Reach for spacing and
+  contrast before reaching for a border, box, or fill.
 - **Motion stays extremely restrained**: fades/transitions only (e.g. the
   homepage's "WELCOME, &lt;NAME&gt;" swap before navigating). No flashy
   animation, no loading spinners, no modals for confirmation — see the
