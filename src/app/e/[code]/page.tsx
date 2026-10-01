@@ -72,11 +72,26 @@ function formatEventDateLine(event: EventRow): string | null {
   return `${day} ${month} ${year}`;
 }
 
+// Times are stored as "HH:MM" (the native format of <input type="time">,
+// set by the organizer in the admin form). Guests never see AM/PM or a
+// colon — always a plain four-digit 24-hour number, e.g. "14:00" -> "1400",
+// "9:00" -> "0900". The stored value itself is untouched; this only
+// affects display.
+function formatTime24(value: string | null): string | null {
+  if (!value) return null;
+  const match = value.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return value;
+  const [, hours, minutes] = match;
+  return `${hours.padStart(2, "0")}${minutes}`;
+}
+
 // invited / opened: the minimal pre-acceptance screen. No gallery
 // credential to remember yet, no tagline — just enough to decide.
 function PendingInvitationScreen({ event, code }: { event: EventRow; code: string }) {
   const dateLine = formatEventDateLine(event);
-  const timeRange = [event.start_time, event.end_time].filter(Boolean).join(" — ");
+  const timeRange = [formatTime24(event.start_time), formatTime24(event.end_time)]
+    .filter(Boolean)
+    .join(" — ");
 
   return (
     <main style={screenStyle}>
@@ -187,10 +202,10 @@ function AcceptedScreen({
 function BriefScreen({ event }: { event: EventRow }) {
   const dateLine = formatEventDateLine(event);
   const legs = [
-    { label: "MEET", time: event.meeting_point_time, location: event.meeting_point_name ?? event.meeting_point_address },
-    { label: "SHOOT", time: event.shoot_time, location: event.shoot_location },
-    { label: "DISCOVER", time: event.discover_time, location: event.discover_location },
-    { label: "HANG", time: event.hang_time, location: event.hang_location },
+    { label: "MEET", time: formatTime24(event.meeting_point_time), location: event.meeting_point_name ?? event.meeting_point_address },
+    { label: "SHOOT", time: formatTime24(event.shoot_time), location: event.shoot_location },
+    { label: "DISCOVER", time: formatTime24(event.discover_time), location: event.discover_location },
+    { label: "HANG", time: formatTime24(event.hang_time), location: event.hang_location },
   ].filter((leg) => leg.time || leg.location);
 
   return (
@@ -255,9 +270,9 @@ function BriefScreen({ event }: { event: EventRow }) {
 // locations — the itinerary made concrete.
 function Itinerary({ event }: { event: EventRow }) {
   const legs = [
-    { label: "SHOOT", location: event.shoot_location, time: event.shoot_time },
-    { label: "DISCOVER", location: event.discover_location, time: event.discover_time },
-    { label: "HANG", location: event.hang_location, time: event.hang_time },
+    { label: "SHOOT", location: event.shoot_location, time: formatTime24(event.shoot_time) },
+    { label: "DISCOVER", location: event.discover_location, time: formatTime24(event.discover_time) },
+    { label: "HANG", location: event.hang_location, time: formatTime24(event.hang_time) },
   ].filter((leg) => leg.location || leg.time);
 
   const hasMeetingPoint =
@@ -279,7 +294,9 @@ function Itinerary({ event }: { event: EventRow }) {
           <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5, marginBottom: "6px" }}>
             MEET HERE
           </p>
-          {event.meeting_point_time && <p style={{ fontSize: "0.85rem", opacity: 0.75 }}>{event.meeting_point_time}</p>}
+          {formatTime24(event.meeting_point_time) && (
+            <p style={{ fontSize: "0.85rem", opacity: 0.75 }}>{formatTime24(event.meeting_point_time)}</p>
+          )}
           {event.meeting_point_name && <p style={{ fontWeight: 600 }}>{event.meeting_point_name}</p>}
           {event.meeting_point_address && (
             <p style={{ fontSize: "0.85rem", opacity: 0.75 }}>{event.meeting_point_address}</p>
