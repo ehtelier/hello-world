@@ -284,6 +284,8 @@ function BriefScreen({ event }: { event: EventRow }) {
 
 // live only: the meeting point + shoot/discover/hang, with real times and
 // locations — the itinerary made concrete.
+// live only: the meeting point moved to The Brief (where attendees still
+// need arrival info) -- by live, the day starts directly with SHOOT.
 function Itinerary({ event }: { event: EventRow }) {
   const legs = [
     { label: "SHOOT", location: event.shoot_location, time: formatTime24(event.shoot_time) },
@@ -291,67 +293,28 @@ function Itinerary({ event }: { event: EventRow }) {
     { label: "HANG", location: event.hang_location, time: formatTime24(event.hang_time) },
   ].filter((leg) => leg.location || leg.time);
 
-  const hasMeetingPoint =
-    event.meeting_point_name || event.meeting_point_address || event.meeting_point_map_link;
-
-  if (legs.length === 0 && !hasMeetingPoint) return null;
+  if (legs.length === 0) return null;
 
   return (
-    <div style={{ width: "100%", maxWidth: "28rem", display: "flex", flexDirection: "column", gap: "16px" }}>
-      {hasMeetingPoint && (
+    <div style={{ width: "100%", maxWidth: "28rem", display: "flex", flexDirection: "column", gap: "10px" }}>
+      {legs.map((leg) => (
         <div
+          key={leg.label}
           style={{
-            textAlign: "center",
-            padding: "16px",
-            border: "1px solid rgba(128, 128, 128, 0.3)",
-            borderRadius: "10px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            borderBottom: "1px solid rgba(128, 128, 128, 0.2)",
+            paddingBottom: "8px",
           }}
         >
-          <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5, marginBottom: "6px" }}>
-            MEET HERE
-          </p>
-          {formatTime24(event.meeting_point_time) && (
-            <p style={{ fontSize: "0.85rem", opacity: 0.75 }}>{formatTime24(event.meeting_point_time)}</p>
-          )}
-          {event.meeting_point_name && <p style={{ fontWeight: 600 }}>{event.meeting_point_name}</p>}
-          {event.meeting_point_address && (
-            <p style={{ fontSize: "0.85rem", opacity: 0.75 }}>{event.meeting_point_address}</p>
-          )}
-          {event.meeting_point_map_link && (
-            <a
-              href={event.meeting_point_map_link}
-              target="_blank"
-              rel="noreferrer"
-              style={{ fontSize: "0.8rem", textDecoration: "underline" }}
-            >
-              Open in Maps
-            </a>
-          )}
+          <div>
+            <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5 }}>{leg.label}</p>
+            {leg.location && <p style={{ fontSize: "0.95rem" }}>{leg.location}</p>}
+          </div>
+          {leg.time && <p style={{ fontSize: "0.85rem", opacity: 0.6 }}>{leg.time}</p>}
         </div>
-      )}
-
-      {legs.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {legs.map((leg) => (
-            <div
-              key={leg.label}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                borderBottom: "1px solid rgba(128, 128, 128, 0.2)",
-                paddingBottom: "8px",
-              }}
-            >
-              <div>
-                <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5 }}>{leg.label}</p>
-                {leg.location && <p style={{ fontSize: "0.95rem" }}>{leg.location}</p>}
-              </div>
-              {leg.time && <p style={{ fontSize: "0.85rem", opacity: 0.6 }}>{leg.time}</p>}
-            </div>
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -381,19 +344,19 @@ function ArchivedItineraryRecap({ event }: { event: EventRow }) {
 // so it's a compact header rather than a full-bleed screen.
 function StageHeader({
   event,
-  participantName,
   momentsCount,
 }: {
   event: EventRow;
-  participantName: string | null;
   momentsCount: number | null;
 }) {
   const dateLine = formatEventDateLine(event);
 
-  // live: streamlined on purpose — brand + PPC number, name, date, nothing
-  // else. No eyebrow, no "TODAY", no moments count; the itinerary and
-  // gallery/upload below speak for themselves.
-  if (event.status === "live") {
+  // live and gallery share one master header, streamlined on purpose:
+  // brand + PPC number inline, name, date, nothing else. No eyebrow, no
+  // moments count here -- the itinerary / "+ ADD PHOTOS" / moments count /
+  // grid below speak for themselves. The goal is for live and gallery to
+  // read as the same event page evolving over time, not two designs.
+  if (event.status === "live" || event.status === "gallery") {
     return (
       <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
         <p style={{ display: "flex", gap: "14px", fontSize: "0.6rem", letterSpacing: "0.3em", opacity: 0.4 }}>
@@ -406,11 +369,9 @@ function StageHeader({
     );
   }
 
+  // archived only, from here down: an artifact, not a live page -- keeps
+  // its own eyebrow, location-only recap, and wrapped note.
   const dateAreaLine = [dateLine, event.area].filter(Boolean).join(" · ");
-
-  let eyebrow = participantName ? `YOU'RE IN, ${participantName.toUpperCase()}` : "YOU'RE IN";
-  if (event.status === "gallery") eyebrow = "THE GALLERY";
-  if (event.status === "archived") eyebrow = "ARCHIVED";
 
   return (
     <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
@@ -418,7 +379,7 @@ function StageHeader({
       {event.ppc_number && (
         <p style={{ fontSize: "0.65rem", letterSpacing: "0.25em", opacity: 0.45 }}>{event.ppc_number}</p>
       )}
-      <p style={{ fontSize: "0.7rem", letterSpacing: "0.25em", opacity: 0.55, marginTop: "4px" }}>{eyebrow}</p>
+      <p style={{ fontSize: "0.7rem", letterSpacing: "0.25em", opacity: 0.55, marginTop: "4px" }}>ARCHIVED</p>
       <h1 style={{ ...eventNameStyle, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05 }}>{event.name}</h1>
       {dateAreaLine && <p style={{ fontSize: "0.8rem", opacity: 0.6, marginTop: "2px" }}>{dateAreaLine}</p>}
       {momentsCount !== null && (
@@ -426,12 +387,10 @@ function StageHeader({
           {momentsCount} {momentsCount === 1 ? "MOMENT" : "MOMENTS"}
         </p>
       )}
-      {event.status === "archived" && <ArchivedItineraryRecap event={event} />}
-      {event.status === "archived" && (
-        <p style={{ maxWidth: "22rem", opacity: 0.8, marginTop: "8px", fontWeight: 400 }}>
-          This event has wrapped. The gallery below is read-only.
-        </p>
-      )}
+      <ArchivedItineraryRecap event={event} />
+      <p style={{ maxWidth: "22rem", opacity: 0.8, marginTop: "8px", fontWeight: 400 }}>
+        This event has wrapped. The gallery below is read-only.
+      </p>
     </div>
   );
 }
@@ -536,11 +495,7 @@ export default async function EventGallery({
         fontFamily: functionalSansStack,
       }}
     >
-      <StageHeader
-        event={event}
-        participantName={participant?.name ?? null}
-        momentsCount={showGallery ? photosWithUrls.length : null}
-      />
+      <StageHeader event={event} momentsCount={event.status === "archived" ? photosWithUrls.length : null} />
 
       {showItinerary && <Itinerary event={event} />}
 
@@ -548,7 +503,7 @@ export default async function EventGallery({
 
       {showGallery && photosWithUrls.length > 0 && (
         <>
-          {event.status === "live" && (
+          {(event.status === "live" || event.status === "gallery") && (
             <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5 }}>
               {photosWithUrls.length} {photosWithUrls.length === 1 ? "MOMENT" : "MOMENTS"}
             </p>
