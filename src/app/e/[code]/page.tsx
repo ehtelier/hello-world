@@ -201,12 +201,28 @@ function AcceptedScreen({
 // all.
 function BriefScreen({ event }: { event: EventRow }) {
   const dateLine = formatEventDateLine(event);
-  const legs = [
-    { label: "MEET", time: formatTime24(event.meeting_point_time), location: event.meeting_point_name ?? event.meeting_point_address },
-    { label: "SHOOT", time: formatTime24(event.shoot_time), location: event.shoot_location },
+
+  const meet = {
+    time: formatTime24(event.meeting_point_time),
+    location: event.meeting_point_name ?? event.meeting_point_address,
+  };
+  const shoot = { time: formatTime24(event.shoot_time), location: event.shoot_location };
+
+  // MEET and SHOOT read as one moment, not two, when they're actually the
+  // same moment -- same time, same place.
+  const meetIsShoot = Boolean(meet.time) && Boolean(meet.location) && meet.time === shoot.time && meet.location === shoot.location;
+
+  const legs = (
+    meetIsShoot
+      ? [{ label: "MEET + SHOOT", time: meet.time, location: meet.location }]
+      : [
+          { label: "MEET", time: meet.time, location: meet.location },
+          { label: "SHOOT", time: shoot.time, location: shoot.location },
+        ]
+  ).concat([
     { label: "DISCOVER", time: formatTime24(event.discover_time), location: event.discover_location },
     { label: "HANG", time: formatTime24(event.hang_time), location: event.hang_location },
-  ].filter((leg) => leg.time || leg.location);
+  ]).filter((leg) => leg.time || leg.location);
 
   return (
     <main style={screenStyle}>
@@ -231,18 +247,18 @@ function BriefScreen({ event }: { event: EventRow }) {
               maxWidth: "26rem",
               borderTop: "1px solid rgba(128, 128, 128, 0.3)",
               marginTop: "8px",
-              paddingTop: "24px",
+              paddingTop: "32px",
               display: "flex",
               flexDirection: "column",
-              gap: "18px",
+              gap: "32px",
             }}
           >
             {legs.map((leg) => (
               <div key={leg.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <p style={{ fontSize: "0.7rem", letterSpacing: "0.25em", opacity: 0.5 }}>{leg.label}</p>
                 <div style={{ textAlign: "right" }}>
-                  {leg.time && <p style={{ fontSize: "0.9rem" }}>{leg.time}</p>}
-                  {leg.location && <p style={{ fontSize: "0.8rem", opacity: 0.65 }}>{leg.location}</p>}
+                  {leg.time && <p style={{ fontSize: "1.2rem", fontWeight: 500 }}>{leg.time}</p>}
+                  {leg.location && <p style={{ fontSize: "0.75rem", opacity: 0.5, marginTop: "2px" }}>{leg.location}</p>}
                 </div>
               </div>
             ))}
@@ -256,7 +272,7 @@ function BriefScreen({ event }: { event: EventRow }) {
             rel="noreferrer"
             style={{ fontSize: "0.75rem", letterSpacing: "0.1em", opacity: 0.6, textDecoration: "underline", marginTop: "8px" }}
           >
-            OPEN MEETING POINT ↗
+            MEETING POINT ↗
           </a>
         )}
       </div>
