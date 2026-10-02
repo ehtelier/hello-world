@@ -357,7 +357,11 @@ bucket → Settings → CORS Policy → Add CORS Policy:
 ```json
 [
   {
-    "AllowedOrigins": ["https://paris-photo-club-eight.vercel.app"],
+    "AllowedOrigins": [
+      "https://theparisphotoclub.com",
+      "https://www.theparisphotoclub.com",
+      "https://paris-photo-club-eight.vercel.app"
+    ],
     "AllowedMethods": ["PUT"],
     "AllowedHeaders": ["*"],
     "MaxAgeSeconds": 3600
@@ -365,9 +369,13 @@ bucket → Settings → CORS Policy → Add CORS Policy:
 ]
 ```
 
-Replace the origin with the site's actual live URL if it differs. Only
-`PUT` needs CORS here: viewing and downloading happen via plain `<img>`/
-`<a>` requests, which browsers don't subject to CORS the way they do
+The custom domain (`theparisphotoclub.com`, connected via Vercel's Domains
+settings, apex redirecting to `www`) is now the primary way the site is
+reached; the original `*.vercel.app` URL is kept in this list too since
+Vercel keeps serving the project there regardless, and any existing
+links/QR codes should keep working through the transition. Only `PUT`
+needs CORS here: viewing and downloading happen via plain `<img>`/`<a>`
+requests, which browsers don't subject to CORS the way they do
 JavaScript-initiated uploads.
 
 ## Environment variables
@@ -467,7 +475,12 @@ event_participants) and `photos.attendee_id` (replaced by
 
 ## Open items / needs owner input before next stage
 
-- Create free accounts: Vercel, Cloudflare (for R2). Neon/Postgres can be
+- ✅ Create free accounts: Vercel, Cloudflare (for R2). Neon/Postgres
   provisioned directly from the Vercel dashboard.
-- Decide on a project/event domain or subdomain (can start on the default
-  `*.vercel.app` URL and add a custom domain later).
+- ✅ Custom domain: `theparisphotoclub.com`, connected via Vercel's
+  Domains settings (apex redirects to `www`). The app needed no code
+  changes for this — every URL it builds (QR codes, invite links) is
+  derived from the incoming request's own host, not a hardcoded value.
+  The one dependency that did need updating was R2's CORS policy (see
+  above), since uploads go straight from the browser to R2 and R2 checks
+  the request's Origin against an explicit allow-list.
