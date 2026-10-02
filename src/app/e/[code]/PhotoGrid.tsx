@@ -228,6 +228,8 @@ function Lightbox({
             src={photo.viewUrl}
             controls
             playsInline
+            poster={photo.thumbUrl ?? undefined}
+            preload="metadata"
             style={{ maxWidth: "100%", maxHeight: "75vh" }}
           />
         ) : (
