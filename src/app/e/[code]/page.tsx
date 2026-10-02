@@ -272,7 +272,7 @@ function BriefScreen({ event }: { event: EventRow }) {
             rel="noreferrer"
             style={{ fontSize: "0.75rem", letterSpacing: "0.1em", opacity: 0.6, textDecoration: "underline", marginTop: "8px" }}
           >
-            MEETING POINT ↗
+            MEETING POINT ↗︎
           </a>
         )}
       </div>
