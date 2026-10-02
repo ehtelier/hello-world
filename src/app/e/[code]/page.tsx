@@ -309,10 +309,10 @@ function Itinerary({ event }: { event: EventRow }) {
           }}
         >
           <div>
-            <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5 }}>{leg.label}</p>
-            {leg.location && <p style={{ fontSize: "0.95rem" }}>{leg.location}</p>}
+            <p style={{ fontSize: "0.6rem", letterSpacing: "0.2em", opacity: 0.5 }}>{leg.label}</p>
+            {leg.location && <p style={{ fontSize: "0.85rem", opacity: 0.85 }}>{leg.location}</p>}
           </div>
-          {leg.time && <p style={{ fontSize: "0.85rem", opacity: 0.6 }}>{leg.time}</p>}
+          {leg.time && <p style={{ fontSize: "0.75rem", fontWeight: 400, opacity: 0.45 }}>{leg.time}</p>}
         </div>
       ))}
     </div>
