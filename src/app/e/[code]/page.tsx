@@ -319,78 +319,22 @@ function Itinerary({ event }: { event: EventRow }) {
   );
 }
 
-// archived: an artifact. Locations only, no times — what happened, not when.
-function ArchivedItineraryRecap({ event }: { event: EventRow }) {
-  const legs = [
-    { label: "SHOOT", location: event.shoot_location },
-    { label: "DISCOVER", location: event.discover_location },
-    { label: "HANG", location: event.hang_location },
-  ].filter((leg) => leg.location);
-
-  if (legs.length === 0) return null;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px", textAlign: "center" }}>
-      {legs.map((leg) => (
-        <p key={leg.label} style={{ fontSize: "0.85rem", opacity: 0.7 }}>
-          {leg.label} — {leg.location}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-// live / gallery / archived: the itinerary and/or gallery render below this,
-// so it's a compact header rather than a full-bleed screen.
-function StageHeader({
-  event,
-  momentsCount,
-}: {
-  event: EventRow;
-  momentsCount: number | null;
-}) {
+// live / gallery / archived: one master header shared by all three, so the
+// event page reads as the same page evolving over time rather than three
+// separate designs. Just brand + PPC number inline, title, date -- no
+// eyebrow, no status label, nothing else. The itinerary / upload-or-closing
+// line / moments count / grid below do the rest of the talking.
+function StageHeader({ event }: { event: EventRow }) {
   const dateLine = formatEventDateLine(event);
 
-  // live and gallery share one master header, streamlined on purpose:
-  // brand + PPC number inline, name, date, nothing else. No eyebrow, no
-  // moments count here -- the itinerary / "+ ADD PHOTOS" / moments count /
-  // grid below speak for themselves. The goal is for live and gallery to
-  // read as the same event page evolving over time, not two designs.
-  if (event.status === "live" || event.status === "gallery") {
-    return (
-      <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
-        <p style={{ display: "flex", gap: "14px", fontSize: "0.6rem", letterSpacing: "0.3em", opacity: 0.4 }}>
-          <span>{BRAND}</span>
-          {event.ppc_number && <span>{event.ppc_number}</span>}
-        </p>
-        <h1 style={{ ...eventNameStyle, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05 }}>{event.name}</h1>
-        {dateLine && <p style={{ fontSize: "0.8rem", opacity: 0.6 }}>{dateLine}</p>}
-      </div>
-    );
-  }
-
-  // archived only, from here down: an artifact, not a live page -- keeps
-  // its own eyebrow, location-only recap, and wrapped note.
-  const dateAreaLine = [dateLine, event.area].filter(Boolean).join(" · ");
-
   return (
-    <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-      <p style={{ fontSize: "0.6rem", letterSpacing: "0.3em", opacity: 0.4 }}>{BRAND}</p>
-      {event.ppc_number && (
-        <p style={{ fontSize: "0.65rem", letterSpacing: "0.25em", opacity: 0.45 }}>{event.ppc_number}</p>
-      )}
-      <p style={{ fontSize: "0.7rem", letterSpacing: "0.25em", opacity: 0.55, marginTop: "4px" }}>ARCHIVED</p>
-      <h1 style={{ ...eventNameStyle, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05 }}>{event.name}</h1>
-      {dateAreaLine && <p style={{ fontSize: "0.8rem", opacity: 0.6, marginTop: "2px" }}>{dateAreaLine}</p>}
-      {momentsCount !== null && (
-        <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5, marginTop: "4px" }}>
-          {momentsCount} {momentsCount === 1 ? "MOMENT" : "MOMENTS"}
-        </p>
-      )}
-      <ArchivedItineraryRecap event={event} />
-      <p style={{ maxWidth: "22rem", opacity: 0.8, marginTop: "8px", fontWeight: 400 }}>
-        This event has wrapped. The gallery below is read-only.
+    <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+      <p style={{ display: "flex", gap: "14px", fontSize: "0.6rem", letterSpacing: "0.3em", opacity: 0.4 }}>
+        <span>{BRAND}</span>
+        {event.ppc_number && <span>{event.ppc_number}</span>}
       </p>
+      <h1 style={{ ...eventNameStyle, fontSize: "clamp(2rem, 8vw, 3rem)", lineHeight: 1.05 }}>{event.name}</h1>
+      {dateLine && <p style={{ fontSize: "0.8rem", opacity: 0.6 }}>{dateLine}</p>}
     </div>
   );
 }
@@ -495,19 +439,20 @@ export default async function EventGallery({
         fontFamily: functionalSansStack,
       }}
     >
-      <StageHeader event={event} momentsCount={event.status === "archived" ? photosWithUrls.length : null} />
+      <StageHeader event={event} />
 
       {showItinerary && <Itinerary event={event} />}
 
       {allowUpload && <UploadForm code={normalizedCode} />}
+      {event.status === "archived" && (
+        <p style={{ fontSize: "0.65rem", letterSpacing: "0.25em", opacity: 0.4 }}>YOU WERE PART OF THIS.</p>
+      )}
 
       {showGallery && photosWithUrls.length > 0 && (
         <>
-          {(event.status === "live" || event.status === "gallery") && (
-            <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5 }}>
-              {photosWithUrls.length} {photosWithUrls.length === 1 ? "MOMENT" : "MOMENTS"}
-            </p>
-          )}
+          <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5 }}>
+            {photosWithUrls.length} {photosWithUrls.length === 1 ? "MOMENT" : "MOMENTS"}
+          </p>
           <PhotoGrid
             photos={photosWithUrls.map((photo) => ({
               id: photo.id,
