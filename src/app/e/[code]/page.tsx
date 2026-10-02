@@ -66,10 +66,10 @@ function formatEventDateLine(event: EventRow): string | null {
   const raw = event.event_date as unknown as string | Date;
   const date = raw instanceof Date ? raw : new Date(raw);
   if (Number.isNaN(date.getTime())) return null;
-  const day = date.getUTCDate();
-  const month = date.toLocaleDateString("en-US", { month: "long", timeZone: "UTC" }).toUpperCase();
-  const year = date.getUTCFullYear();
-  return `${day} ${month} ${year}`;
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = String(date.getUTCFullYear() % 100).padStart(2, "0");
+  return `${day} · ${month} · ${year}`;
 }
 
 // Times are stored as "HH:MM" (the native format of <input type="time">,
