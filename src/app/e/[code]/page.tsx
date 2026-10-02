@@ -445,12 +445,12 @@ export default async function EventGallery({
 
       {allowUpload && <UploadForm code={normalizedCode} />}
       {event.status === "archived" && (
-        <p style={{ fontSize: "0.65rem", letterSpacing: "0.25em", opacity: 0.4 }}>YOU WERE PART OF THIS.</p>
+        <p style={{ fontSize: "0.75rem", letterSpacing: "0.25em", opacity: 0.4 }}>YOU WERE PART OF THIS.</p>
       )}
 
       {showGallery && photosWithUrls.length > 0 && (
         <>
-          <p style={{ fontSize: "0.7rem", letterSpacing: "0.2em", opacity: 0.5 }}>
+          <p style={{ fontSize: "0.65rem", letterSpacing: "0.2em", opacity: 0.5 }}>
             {photosWithUrls.length} {photosWithUrls.length === 1 ? "MOMENT" : "MOMENTS"}
           </p>
           <PhotoGrid
