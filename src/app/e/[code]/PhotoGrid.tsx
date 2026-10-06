@@ -1,0 +1,274 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+type Photo = {
+  id: string;
+  viewUrl: string;
+  thumbUrl: string | null;
+  mimeType: string;
+  uploaderFirstName: string | null;
+};
+
+export function PhotoGrid({ photos }: { photos: Photo[] }) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  return (
+    <>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "2px",
+          width: "100%",
+          maxWidth: "42rem",
+        }}
+      >
+        {photos.map((photo, index) => (
+          <button
+            key={photo.id}
+            type="button"
+            onClick={() => setOpenIndex(index)}
+            style={{
+              display: "block",
+              position: "relative",
+              width: "100%",
+              aspectRatio: "1",
+              overflow: "hidden",
+              background: "rgba(128, 128, 128, 0.15)",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+            }}
+          >
+            {photo.mimeType.startsWith("video/") ? (
+              <>
+                {photo.thumbUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photo.thumbUrl}
+                    alt=""
+                    loading="lazy"
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                ) : (
+                  <video
+                    src={photo.viewUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                )}
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    color: "white",
+                    fontSize: "1.5rem",
+                    textShadow: "0 1px 6px rgba(0, 0, 0, 0.6)",
+                    pointerEvents: "none",
+                  }}
+                >
+                  ▶
+                </span>
+              </>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photo.viewUrl}
+                alt=""
+                loading="lazy"
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {openIndex !== null && (
+        <Lightbox
+          photo={photos[openIndex]}
+          index={openIndex}
+          total={photos.length}
+          onClose={() => setOpenIndex(null)}
+          onPrev={() => setOpenIndex((i) => (i === null ? null : (i - 1 + photos.length) % photos.length))}
+          onNext={() => setOpenIndex((i) => (i === null ? null : (i + 1) % photos.length))}
+        />
+      )}
+    </>
+  );
+}
+
+function Lightbox({
+  photo,
+  index,
+  total,
+  onClose,
+  onPrev,
+  onNext,
+}: {
+  photo: Photo;
+  index: number;
+  total: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const touchStartY = useRef<number | null>(null);
+
+  // Without this, the grid underneath keeps scrolling behind the
+  // full-screen viewer while swiping, since a fixed overlay alone doesn't
+  // stop the page behind it from scrolling on mobile.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0, 0, 0, 0.95)",
+        zIndex: 50,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+        touchAction: "none",
+      }}
+      onTouchStart={(event) => {
+        touchStartY.current = event.touches[0].clientY;
+      }}
+      onTouchEnd={(event) => {
+        if (touchStartY.current === null) return;
+        const delta = event.changedTouches[0].clientY - touchStartY.current;
+        // Swipe up (like TikTok/Instagram) advances to the next photo;
+        // swipe down goes back, matching a vertical feed gesture.
+        if (delta < -50) onNext();
+        else if (delta > 50) onPrev();
+        touchStartY.current = null;
+      }}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        style={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          background: "none",
+          border: "none",
+          color: "white",
+          fontSize: "1.5rem",
+          cursor: "pointer",
+        }}
+      >
+        ✕
+      </button>
+
+      <button
+        type="button"
+        onClick={onPrev}
+        aria-label="Previous"
+        style={{
+          position: "absolute",
+          top: 4,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "none",
+          border: "none",
+          color: "white",
+          fontSize: "1.5rem",
+          cursor: "pointer",
+          padding: "12px",
+        }}
+      >
+        ▲
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        aria-label="Next"
+        style={{
+          position: "absolute",
+          bottom: 4,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "none",
+          border: "none",
+          color: "white",
+          fontSize: "1.5rem",
+          cursor: "pointer",
+          padding: "12px",
+        }}
+      >
+        ▼
+      </button>
+
+      <div
+        style={{
+          maxWidth: "100%",
+          maxHeight: "75vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {photo.mimeType.startsWith("video/") ? (
+          <video
+            src={photo.viewUrl}
+            controls
+            playsInline
+            poster={photo.thumbUrl ?? undefined}
+            preload="metadata"
+            style={{ maxWidth: "100%", maxHeight: "75vh" }}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photo.viewUrl}
+            alt=""
+            style={{ maxWidth: "100%", maxHeight: "75vh", objectFit: "contain" }}
+          />
+        )}
+      </div>
+
+      <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+        <p
+          style={{
+            color: "rgba(255, 255, 255, 0.6)",
+            fontSize: "0.8rem",
+            letterSpacing: "0.1em",
+            textAlign: "center",
+          }}
+        >
+          {index + 1} / {total}
+        </p>
+        {photo.uploaderFirstName && (
+          <>
+            <div style={{ width: "24px", height: "1px", background: "rgba(255, 255, 255, 0.3)" }} />
+            <p
+              style={{
+                color: "rgba(255, 255, 255, 0.6)",
+                fontSize: "0.75rem",
+                letterSpacing: "0.05em",
+                textAlign: "center",
+              }}
+            >
+              Photo captured by {photo.uploaderFirstName}
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
